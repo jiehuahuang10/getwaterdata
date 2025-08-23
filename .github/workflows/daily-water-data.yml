@@ -38,6 +38,10 @@ jobs:
         python github_automation.py
       env:
         TZ: Asia/Shanghai
+        LOGIN_URL: ${{ secrets.LOGIN_URL }}
+        USERNAME: ${{ secrets.USERNAME }}
+        PASSWORD: ${{ secrets.PASSWORD }}
+        REPORT_URL: ${{ secrets.REPORT_URL }}
     
     - name: 提交更新的Excel文件
       run: |
