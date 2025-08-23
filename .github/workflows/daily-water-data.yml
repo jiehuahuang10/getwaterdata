@@ -15,6 +15,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+        permissions: write
     
     - name: 设置Python环境
       uses: actions/setup-python@v4
