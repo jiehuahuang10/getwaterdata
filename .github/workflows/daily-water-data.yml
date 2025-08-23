@@ -52,19 +52,20 @@ jobs:
           git push
         fi
     
-    - name: 发送通知邮件 (可选)
-      if: always()
-      uses: dawidd6/action-send-mail@v3
-      with:
-        server_address: smtp.gmail.com
-        server_port: 587
-        username: ${{ secrets.EMAIL_USERNAME }}
-        password: ${{ secrets.EMAIL_PASSWORD }}
-        subject: 水务数据更新结果 - ${{ job.status }}
-        body: |
-          执行时间: ${{ steps.date.outputs.date }}
-          执行状态: ${{ job.status }}
-          
-          详细日志请查看: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        to: ${{ secrets.NOTIFICATION_EMAIL }}
-        from: 水务数据系统 <${{ secrets.EMAIL_USERNAME }}>
+    # 邮件通知功能暂时禁用
+    # - name: 发送通知邮件 (可选)
+    #   if: always()
+    #   uses: dawidd6/action-send-mail@v3
+    #   with:
+    #     server_address: smtp.gmail.com
+    #     server_port: 587
+    #     username: ${{ secrets.EMAIL_USERNAME }}
+    #     password: ${{ secrets.EMAIL_PASSWORD }}
+    #     subject: 水务数据更新结果 - ${{ job.status }}
+    #     body: |
+    #       执行时间: ${{ steps.date.outputs.date }}
+    #       执行状态: ${{ job.status }}
+    #       
+    #       详细日志请查看: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    #     to: ${{ secrets.NOTIFICATION_EMAIL }}
+    #     from: 水务数据系统 <${{ secrets.EMAIL_USERNAME }}>
