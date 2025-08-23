@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史数据 - 水务数据获取系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            padding: 40px;
+        }
+        
+        .nav-links {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .nav-links a {
+            color: #4facfe;
+            text-decoration: none;
+            margin: 0 15px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .nav-links a:hover {
+            background-color: #f0f8ff;
+        }
+        
+        .nav-links a.active {
+            background-color: #4facfe;
+            color: white;
+        }
+        
+        .history-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+        
+        .table-header {
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .table-header h2 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .table-header p {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        th {
+            background: #f8f9ff;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        td {
+            color: #666;
+        }
+        
+        tr:hover {
+            background: #f8f9ff;
+        }
+        
+        .file-icon {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 0.8em;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .file-size {
+            color: #999;
+            font-size: 0.9em;
+        }
+        
+        .meter-count {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .date-range {
+            background: #fff3e0;
+            color: #ef6c00;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #999;
+        }
+        
+        .empty-state p {
+            margin-bottom: 20px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 25px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #f44336;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            border-top: 1px solid #e0e0e0;
+            margin-top: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            table {
+                font-size: 0.9em;
+            }
+            
+            th, td {
+                padding: 10px 15px;
+            }
+            
+            .nav-links a {
+                margin: 5px;
+                display: inline-block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 历史数据</h1>
+            <p>查看所有已获取的水务数据文件</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="nav-links">
+                <a href="/">🏠 主页</a>
+                <a href="/history" class="active">📊 历史数据</a>
+            </div>
+            
+            {% if error %}
+            <div class="error-message">
+                <h3>❌ 读取历史数据时发生错误</h3>
+                <p>{{ error }}</p>
+            </div>
+            {% elif not history_data %}
+            <div class="empty-state">
+                <div class="icon">📂</div>
+                <h3>暂无历史数据</h3>
+                <p>还没有获取过水务数据，点击下面的按钮开始获取数据。</p>
+                <a href="/" class="btn-primary">🚀 开始获取数据</a>
+            </div>
+            {% else %}
+            <div class="history-table">
+                <div class="table-header">
+                    <h2>📋 数据文件列表</h2>
+                    <p>共找到 {{ history_data|length }} 个数据文件</p>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>📄 文件名</th>
+                            <th>🕐 获取时间</th>
+                            <th>📊 水表数量</th>
+                            <th>📅 数据范围</th>
+                            <th>💾 文件大小</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in history_data %}
+                        <tr>
+                            <td>
+                                <span class="file-icon">📄</span>
+                                <span class="file-name">{{ item.filename }}</span>
+                            </td>
+                            <td>{{ item.timestamp }}</td>
+                            <td>
+                                {% if item.meter_count > 0 %}
+                                <span class="meter-count">{{ item.meter_count }} 个水表</span>
+                                {% else %}
+                                <span style="color: #999;">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.date_range and item.date_range != ' 至 ' %}
+                                <span class="date-range">{{ item.date_range }}</span>
+                                {% else %}
+                                <span style="color: #999;">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="file-size">{{ "%.1f"|format(item.size / 1024) }} KB</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 水务数据获取系统 | 技术支持: Python + Flask</p>
+        </div>
+    </div>
+</body>
+</html>

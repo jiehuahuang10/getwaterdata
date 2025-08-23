@@ -1,0 +1,70 @@
+name: 每日水务数据自动更新
+
+on:
+  schedule:
+    # 每天下午6点执行 (UTC时间10:00 = 北京时间18:00)
+    - cron: '0 10 * * *'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  update-water-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: 设置Python环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 创建配置文件
+      run: |
+        echo "LOGIN_URL=${{ secrets.LOGIN_URL }}" > config.env
+        echo "USERNAME=${{ secrets.USERNAME }}" >> config.env
+        echo "PASSWORD=${{ secrets.PASSWORD }}" >> config.env
+        echo "REPORT_URL=${{ secrets.REPORT_URL }}" >> config.env
+    
+    - name: 执行水务数据更新
+      run: |
+        python github_automation.py
+      env:
+        TZ: Asia/Shanghai
+    
+    - name: 提交更新的Excel文件
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add excel_exports/石滩供水服务部每日总供水情况.xlsx
+        git add *.json
+        if git diff --staged --quiet; then
+          echo "没有文件更改"
+        else
+          git commit -m "自动更新水务数据 - $(date +'%Y-%m-%d %H:%M:%S')"
+          git push
+        fi
+    
+    - name: 发送通知邮件 (可选)
+      if: always()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: 水务数据更新结果 - ${{ job.status }}
+        body: |
+          执行时间: ${{ steps.date.outputs.date }}
+          执行状态: ${{ job.status }}
+          
+          详细日志请查看: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        to: ${{ secrets.NOTIFICATION_EMAIL }}
+        from: 水务数据系统 <${{ secrets.EMAIL_USERNAME }}>

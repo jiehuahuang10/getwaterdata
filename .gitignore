@@ -1,0 +1,40 @@
+# 敏感配置文件
+config.env
+*.env
+
+# 日志文件
+*.log
+github_automation.log
+
+# Python缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 临时文件
+*.tmp
+*.temp
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 测试文件
+test_*.py
+debug_*.py
+
+# 数据文件（可选，如果不想上传Excel文件）
+# excel_exports/*.xlsx
+# *.json
