@@ -4,11 +4,14 @@ on:
   schedule:
     # 每天下午6点执行 (UTC时间10:00 = 北京时间18:00)
     - cron: '0 10 * * *'
+    # 每周一上午9点保持活跃 (UTC时间1:00 = 北京时间9:00)
+    - cron: '0 1 * * 1'
   workflow_dispatch: # 允许手动触发
 
 jobs:
   update-water-data:
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # 设置30分钟超时
     
     steps:
     - name: 检出代码
@@ -26,6 +29,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install requests beautifulsoup4 openpyxl
     
     - name: 创建配置文件
       run: |
@@ -35,6 +39,7 @@ jobs:
         echo "REPORT_URL=${{ secrets.REPORT_URL }}" >> config.env
     
     - name: 执行水务数据更新
+      id: update_data
       run: |
         python github_automation.py
       env:
@@ -43,13 +48,27 @@ jobs:
         USERNAME: ${{ secrets.USERNAME }}
         PASSWORD: ${{ secrets.PASSWORD }}
         REPORT_URL: ${{ secrets.REPORT_URL }}
+      continue-on-error: true
+    
+    - name: 检查执行结果
+      id: check_result
+      run: |
+        if [ -f "last_execution_summary.json" ]; then
+          echo "执行摘要存在"
+          echo "success=true" >> $GITHUB_OUTPUT
+        else
+          echo "执行摘要不存在，可能执行失败"
+          echo "success=false" >> $GITHUB_OUTPUT
+        fi
     
     - name: 提交更新的Excel文件
+      if: steps.check_result.outputs.success == 'true'
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add excel_exports/石滩供水服务部每日总供水情况.xlsx
         git add *.json
+        git add last_execution_summary.json
         if git diff --staged --quiet; then
           echo "没有文件更改"
         else
@@ -57,20 +76,32 @@ jobs:
           git push
         fi
     
-    # 邮件通知功能暂时禁用
-    # - name: 发送通知邮件 (可选)
-    #   if: always()
-    #   uses: dawidd6/action-send-mail@v3
-    #   with:
-    #     server_address: smtp.gmail.com
-    #     server_port: 587
-    #     username: ${{ secrets.EMAIL_USERNAME }}
-    #     password: ${{ secrets.EMAIL_PASSWORD }}
-    #     subject: 水务数据更新结果 - ${{ job.status }}
-    #     body: |
-    #       执行时间: ${{ steps.date.outputs.date }}
-    #       执行状态: ${{ job.status }}
-    #       
-    #       详细日志请查看: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-    #     to: ${{ secrets.NOTIFICATION_EMAIL }}
-    #     from: 水务数据系统 <${{ secrets.EMAIL_USERNAME }}>
+    - name: 创建执行状态徽章
+      if: always()
+      run: |
+        # 创建执行状态文件
+        if [ "${{ steps.check_result.outputs.success }}" == "true" ]; then
+          echo "✅ 最后执行成功: $(date +'%Y-%m-%d %H:%M:%S')" > execution_status.md
+        else
+          echo "❌ 最后执行失败: $(date +'%Y-%m-%d %H:%M:%S')" > execution_status.md
+        fi
+        
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add execution_status.md
+        git commit -m "更新执行状态 - $(date +'%Y-%m-%d %H:%M:%S')" || true
+        git push || true
+    
+    - name: 失败通知
+      if: failure()
+      run: |
+        echo "❌ GitHub Actions执行失败"
+        echo "请检查日志: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        echo "失败时间: $(date +'%Y-%m-%d %H:%M:%S')"
+    
+    - name: 成功通知
+      if: success()
+      run: |
+        echo "✅ GitHub Actions执行成功"
+        echo "执行时间: $(date +'%Y-%m-%d %H:%M:%S')"
+        echo "Excel文件已更新"
