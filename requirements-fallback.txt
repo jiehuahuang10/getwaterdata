@@ -1,0 +1,6 @@
+# 备用依赖配置 - 如果pandas无法安装则使用此配置
+flask==3.0.0
+requests==2.31.0
+beautifulsoup4==4.12.2
+openpyxl==3.1.2
+# pandas暂时移除，使用内置的csv处理

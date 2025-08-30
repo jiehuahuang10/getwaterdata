@@ -4,12 +4,27 @@
 Excel导出功能模块
 """
 
-import pandas as pd
+# 优先尝试导入pandas，如果失败则使用备用方案
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    print("⚠️ pandas不可用，将使用备用的Excel处理方案")
+    PANDAS_AVAILABLE = False
+    pd = None
+
 from datetime import datetime, timedelta
 import os
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils.dataframe import dataframe_to_rows
+
+# 如果pandas可用，才导入dataframe_to_rows
+if PANDAS_AVAILABLE:
+    try:
+        from openpyxl.utils.dataframe import dataframe_to_rows
+    except ImportError:
+        print("⚠️ openpyxl.utils.dataframe不可用")
+        PANDAS_AVAILABLE = False
 
 def calculate_yesterday():
     """计算昨天的日期"""
@@ -318,16 +333,26 @@ def export_simple_csv(water_data, output_dir="excel_exports"):
         if not yesterday_data:
             return None, "没有可导出的数据"
         
-        # 转换为DataFrame
-        df = pd.DataFrame(yesterday_data)
-        
         # 生成文件名
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         yesterday = calculate_yesterday().replace('-', '')
-        filename = os.path.join(output_dir, f"水表用水量_{yesterday}_{timestamp}.csv")
         
-        # 保存CSV文件
-        df.to_csv(filename, index=False, encoding='utf-8-sig')
+        if PANDAS_AVAILABLE:
+            # 使用pandas导出CSV
+            df = pd.DataFrame(yesterday_data)
+            filename = os.path.join(output_dir, f"水表用水量_{yesterday}_{timestamp}.csv")
+            df.to_csv(filename, index=False, encoding='utf-8-sig')
+        else:
+            # 使用内置csv模块
+            import csv
+            filename = os.path.join(output_dir, f"水表用水量_{yesterday}_{timestamp}.csv")
+            
+            with open(filename, 'w', newline='', encoding='utf-8-sig') as csvfile:
+                if yesterday_data:
+                    fieldnames = yesterday_data[0].keys()
+                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                    writer.writeheader()
+                    writer.writerows(yesterday_data)
         
         return filename, f"成功导出 {len(yesterday_data)} 个水表的数据"
         
