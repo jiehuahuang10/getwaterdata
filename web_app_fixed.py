@@ -21,13 +21,23 @@ except ImportError as e:
     EXCEL_EXPORT_AVAILABLE = False
     # 提供简单的替代函数
     def export_to_excel(*args, **kwargs):
-        return None
+        return None, "Excel导出功能暂不可用（缺少openpyxl或pandas）"
     def export_simple_csv(*args, **kwargs):
-        return None
+        return None, "CSV导出功能暂不可用（缺少pandas）"
     def update_excel_with_date(*args, **kwargs):
-        return None
+        return False, "Excel更新功能暂不可用（缺少openpyxl或pandas）"
     def get_excel_existing_dates(*args, **kwargs):
         return []
+
+# 尝试导入集成更新模块，如果失败则提供替代方案
+try:
+    from integrated_excel_updater import update_excel_with_real_data
+    INTEGRATED_UPDATER_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ 集成更新模块不可用: {e}")
+    INTEGRATED_UPDATER_AVAILABLE = False
+    def update_excel_with_real_data(*args, **kwargs):
+        return {'success': False, 'error': '集成更新功能暂不可用（缺少相关依赖包）'}
 
 # 直接导入数据获取模块，避免subprocess编码问题
 import sys
@@ -276,6 +286,9 @@ def get_data():
 def export_excel():
     """导出Excel文件"""
     try:
+        if not EXCEL_EXPORT_AVAILABLE:
+            return jsonify({'success': False, 'message': 'Excel导出功能暂不可用（缺少openpyxl或pandas）'})
+            
         # 获取最新的数据
         data = None
         if task_status['data']:
@@ -324,6 +337,9 @@ def download_excel(filename):
 def get_excel_files():
     """获取可用的Excel文件列表"""
     try:
+        if not EXCEL_EXPORT_AVAILABLE:
+            return jsonify({'success': False, 'message': 'Excel功能暂不可用（缺少openpyxl或pandas）'})
+            
         excel_files = []
         if os.path.exists('excel_exports'):
             files = glob.glob(os.path.join('excel_exports', '*.xlsx'))
@@ -357,9 +373,10 @@ def get_excel_files():
 @app.route('/update_excel_date', methods=['POST'])
 def update_excel_date():
     """向Excel文件中添加指定日期的数据"""
-    from integrated_excel_updater import update_excel_with_real_data
-    
     try:
+        if not INTEGRATED_UPDATER_AVAILABLE:
+            return jsonify({'success': False, 'message': '集成更新功能暂不可用（缺少相关依赖包）'})
+            
         data = request.get_json()
         excel_file = data.get('excel_file')
         target_date = data.get('target_date')
@@ -396,9 +413,10 @@ def update_excel_date():
 @app.route('/update_specific_excel', methods=['POST'])
 def update_specific_excel():
     """更新指定的Excel文件（石滩供水服务部每日总供水情况.xlsx）"""
-    from integrated_excel_updater import update_excel_with_real_data
-    
     try:
+        if not INTEGRATED_UPDATER_AVAILABLE:
+            return jsonify({'success': False, 'message': '集成更新功能暂不可用（缺少相关依赖包）'})
+            
         data = request.get_json()
         target_date = data.get('target_date')
         
@@ -507,9 +525,13 @@ def history():
         return render_template('history.html', history_data=[], error=str(e))
 
 if __name__ == '__main__':
-    print("🌐 启动水务数据获取Web界面（修复版）...")
+    print("🌐 启动水务数据获取Web界面（原版功能恢复）...")
     print("📱 访问地址: http://localhost:5000")
-    print("🔧 已修复编码问题，直接调用数据获取功能")
+    print("🔧 完整功能: 数据获取、Excel导出、历史数据查看")
+    
+    # 显示功能状态
+    print(f"📋 Excel导出功能: {'\u2705 可用' if EXCEL_EXPORT_AVAILABLE else '\u274c 不可用（缺少openpyxl或pandas）'}")
+    print(f"🔄 集成更新功能: {'\u2705 可用' if INTEGRATED_UPDATER_AVAILABLE else '\u274c 不可用（缺少相关模块）'}")
     print("🔄 按 Ctrl+C 停止服务")
     
     # 支持云部署的端口配置
