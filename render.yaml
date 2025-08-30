@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: waterdata-web
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python web_app_fixed.py
+    envVars:
+      - key: LOGIN_URL
+        value: http://axwater.dmas.cn/Login.aspx
+      - key: USERNAME
+        value: 13509288500
+      - key: PASSWORD
+        value: 288500
+      - key: REPORT_URL
+        value: http://axwater.dmas.cn/reports/FluxRpt.aspx
+      - key: FLASK_ENV
+        value: production

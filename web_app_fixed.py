@@ -498,4 +498,9 @@ if __name__ == '__main__':
     print("🔧 已修复编码问题，直接调用数据获取功能")
     print("🔄 按 Ctrl+C 停止服务")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # 支持云部署的端口配置
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    debug_mode = os.environ.get('FLASK_ENV') != 'production'
+    
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)
