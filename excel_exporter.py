@@ -4,27 +4,26 @@
 Excel导出功能模块
 """
 
-# 优先尝试导入pandas，如果失败则使用备用方案
-try:
-    import pandas as pd
-    PANDAS_AVAILABLE = True
-except ImportError:
-    print("⚠️ pandas不可用，将使用备用的Excel处理方案")
-    PANDAS_AVAILABLE = False
-    pd = None
-
 from datetime import datetime, timedelta
 import os
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
-# 如果pandas可用，才导入dataframe_to_rows
-if PANDAS_AVAILABLE:
-    try:
-        from openpyxl.utils.dataframe import dataframe_to_rows
-    except ImportError:
-        print("⚠️ openpyxl.utils.dataframe不可用")
-        PANDAS_AVAILABLE = False
+# 优先尝试导入pandas，如果失败则使用备用方案
+PANDAS_AVAILABLE = False
+try:
+    import pandas as pd
+    from openpyxl.utils.dataframe import dataframe_to_rows
+    PANDAS_AVAILABLE = True
+    print("✅ pandas模块加载成功")
+except ImportError as e:
+    print(f"⚠️ pandas不可用: {e}")
+    print("📝 将使用备用的Excel处理方案")
+    # 创建一个空的pandas模拟对象避免IDE报错
+    class MockPandas:
+        def DataFrame(self, *args, **kwargs):
+            return None
+    pd = MockPandas()
 
 def calculate_yesterday():
     """计算昨天的日期"""
@@ -116,79 +115,88 @@ def extract_yesterday_data(water_data):
 
 def create_horizontal_excel(horizontal_data, meters, filename):
     """创建横向格式的Excel文件（水表作为列，日期作为行）"""
-    # 创建工作簿和工作表
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "水表用水量数据"
-    
-    # 定义样式
-    header_font = Font(name='Microsoft YaHei', size=12, bold=True, color='FFFFFF')
-    header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
-    header_alignment = Alignment(horizontal='center', vertical='center')
-    
-    data_font = Font(name='Microsoft YaHei', size=11)
-    data_alignment = Alignment(horizontal='center', vertical='center')
-    
-    border = Border(
-        left=Side(border_style='thin'),
-        right=Side(border_style='thin'),
-        top=Side(border_style='thin'),
-        bottom=Side(border_style='thin')
-    )
-    
-    # 第一行：日期标题
-    ws['A1'] = "日期"
-    ws['A1'].font = header_font
-    ws['A1'].fill = header_fill
-    ws['A1'].alignment = header_alignment
-    ws['A1'].border = border
-    
-    # 第一行：水表名称作为列标题
-    for col_idx, meter in enumerate(meters, 2):
-        cell = ws.cell(row=1, column=col_idx, value=meter['name'])
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = header_alignment
-        cell.border = border
-    
-    # 添加数据行
-    for row_idx, row_data in enumerate(horizontal_data, 2):
-        # 日期列
-        date_cell = ws.cell(row=row_idx, column=1, value=row_data['日期'])
-        date_cell.font = data_font
-        date_cell.alignment = data_alignment
-        date_cell.border = border
-        
-        # 各水表数据列
-        for col_idx, meter in enumerate(meters, 2):
-            value = row_data.get(meter['name'], '')
-            cell = ws.cell(row=row_idx, column=col_idx, value=value)
-            cell.font = data_font
-            cell.alignment = data_alignment
-            cell.border = border
+    try:
+        # 创建工作簿和工作表
+        wb = Workbook()
+        ws = wb.active
+        if ws is None:
+            raise ValueError("无法创建工作表")
             
-            # 数值格式化
-            if isinstance(value, (int, float)) and value != '':
-                cell.number_format = '#,##0.00'
-                # 大数值高亮
-                if value > 100000:
-                    cell.fill = PatternFill(start_color='FFE6E6', end_color='FFE6E6', fill_type='solid')
-                elif value > 50000:
-                    cell.fill = PatternFill(start_color='FFF2E6', end_color='FFF2E6', fill_type='solid')
-    
-    # 自动调整列宽
-    ws.column_dimensions['A'].width = 15  # 日期列
-    for col_idx in range(2, len(meters) + 2):
-        col_letter = ws.cell(row=1, column=col_idx).column_letter
-        ws.column_dimensions[col_letter].width = 20  # 水表数据列
-    
-    # 设置行高
-    for row in range(1, len(horizontal_data) + 2):
-        ws.row_dimensions[row].height = 25
-    
-    # 保存文件
-    wb.save(filename)
-    return filename
+        ws.title = "水表用水量数据"
+        
+        # 定义样式
+        header_font = Font(name='Microsoft YaHei', size=12, bold=True, color='FFFFFF')
+        header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
+        header_alignment = Alignment(horizontal='center', vertical='center')
+        
+        data_font = Font(name='Microsoft YaHei', size=11)
+        data_alignment = Alignment(horizontal='center', vertical='center')
+        
+        border = Border(
+            left=Side(border_style='thin'),
+            right=Side(border_style='thin'),
+            top=Side(border_style='thin'),
+            bottom=Side(border_style='thin')
+        )
+        
+        # 第一行：日期标题
+        ws['A1'] = "日期"
+        ws['A1'].font = header_font
+        ws['A1'].fill = header_fill
+        ws['A1'].alignment = header_alignment
+        ws['A1'].border = border
+        
+        # 第一行：水表名称作为列标题
+        for col_idx, meter in enumerate(meters, 2):
+            cell = ws.cell(row=1, column=col_idx, value=meter['name'])
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = border
+        
+        # 添加数据行
+        for row_idx, row_data in enumerate(horizontal_data, 2):
+            # 日期列
+            date_cell = ws.cell(row=row_idx, column=1, value=row_data['日期'])
+            date_cell.font = data_font
+            date_cell.alignment = data_alignment
+            date_cell.border = border
+            
+            # 各水表数据列
+            for col_idx, meter in enumerate(meters, 2):
+                value = row_data.get(meter['name'], '')
+                cell = ws.cell(row=row_idx, column=col_idx, value=value)
+                cell.font = data_font
+                cell.alignment = data_alignment
+                cell.border = border
+                
+                # 数值格式化
+                if isinstance(value, (int, float)) and value != '':
+                    cell.number_format = '#,##0.00'
+                    # 大数值高亮
+                    if value > 100000:
+                        cell.fill = PatternFill(start_color='FFE6E6', end_color='FFE6E6', fill_type='solid')
+                    elif value > 50000:
+                        cell.fill = PatternFill(start_color='FFF2E6', end_color='FFF2E6', fill_type='solid')
+        
+        # 自动调整列宽
+        ws.column_dimensions['A'].width = 15  # 日期列
+        for col_idx in range(2, len(meters) + 2):
+            from openpyxl.utils import get_column_letter
+            col_letter = get_column_letter(col_idx)
+            ws.column_dimensions[col_letter].width = 20  # 水表数据列
+        
+        # 设置行高
+        for row in range(1, len(horizontal_data) + 2):
+            ws.row_dimensions[row].height = 25
+        
+        # 保存文件
+        wb.save(filename)
+        return filename
+        
+    except Exception as e:
+        print(f"创建横向Excel文件失败: {e}")
+        return None
 
 def create_styled_excel(data, filename):
     """创建带样式的Excel文件（原有纵向格式，保留兼容性）"""
@@ -337,24 +345,28 @@ def export_simple_csv(water_data, output_dir="excel_exports"):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         yesterday = calculate_yesterday().replace('-', '')
         
-        if PANDAS_AVAILABLE:
+        if PANDAS_AVAILABLE and pd is not None:
             # 使用pandas导出CSV
-            df = pd.DataFrame(yesterday_data)
-            filename = os.path.join(output_dir, f"水表用水量_{yesterday}_{timestamp}.csv")
-            df.to_csv(filename, index=False, encoding='utf-8-sig')
-        else:
-            # 使用内置csv模块
-            import csv
-            filename = os.path.join(output_dir, f"水表用水量_{yesterday}_{timestamp}.csv")
-            
-            with open(filename, 'w', newline='', encoding='utf-8-sig') as csvfile:
-                if yesterday_data:
-                    fieldnames = yesterday_data[0].keys()
-                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                    writer.writeheader()
-                    writer.writerows(yesterday_data)
+            try:
+                df = pd.DataFrame(yesterday_data)
+                filename = os.path.join(output_dir, f"水表用水量_{yesterday}_{timestamp}.csv")
+                df.to_csv(filename, index=False, encoding='utf-8-sig')
+                return filename, f"成功导出 {len(yesterday_data)} 个水表的数据"
+            except Exception as e:
+                print(f"⚠️ pandas导出失败，使用备用方案: {e}")
         
-        return filename, f"成功导出 {len(yesterday_data)} 个水表的数据"
+        # 使用内置csv模块（备用方案）
+        import csv
+        filename = os.path.join(output_dir, f"水表用水量_{yesterday}_{timestamp}.csv")
+        
+        with open(filename, 'w', newline='', encoding='utf-8-sig') as csvfile:
+            if yesterday_data:
+                fieldnames = yesterday_data[0].keys()
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(yesterday_data)
+        
+        return filename, f"成功导出 {len(yesterday_data)} 个水表的数据（使用CSV格式）"
         
     except Exception as e:
         return None, f"导出失败: {str(e)}"
