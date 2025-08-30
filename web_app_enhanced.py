@@ -19,8 +19,18 @@ try:
     from bs4 import BeautifulSoup
     import hashlib
     HTTP_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    print(f"⚠️ HTTP功能模块不可用: {e}")
     HTTP_AVAILABLE = False
+    # 创建替代对象避免IDE错误
+    class MockModule:
+        def Session(self): return None
+        def get(self, *args, **kwargs): return None
+        def post(self, *args, **kwargs): return None
+        def md5(self, *args, **kwargs): return type('obj', (object,), {'hexdigest': lambda: ''})
+    requests = MockModule()
+    BeautifulSoup = lambda *args, **kwargs: None
+    hashlib = MockModule()
 
 # 尝试导入Excel功能
 try:
@@ -28,8 +38,20 @@ try:
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     EXCEL_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    print(f"⚠️ Excel功能模块不可用: {e}")
     EXCEL_AVAILABLE = False
+    # 创建替代对象避免IDE错误
+    class MockExcel:
+        def __init__(self, *args, **kwargs): 
+            self.active = None
+        def save(self, *args, **kwargs): pass
+    Workbook = MockExcel
+    Font = lambda *args, **kwargs: None
+    PatternFill = lambda *args, **kwargs: None
+    Alignment = lambda *args, **kwargs: None
+    Border = lambda *args, **kwargs: None
+    Side = lambda *args, **kwargs: None
 
 # 尝试导入数据处理功能
 try:
@@ -81,7 +103,7 @@ def enhanced_water_data_fetch():
         task_status['message'] = '正在连接水务系统...'
         time.sleep(1)
         
-        session = requests.Session()
+        session = requests.Session()  # type: ignore
         
         # 登录步骤
         task_status['progress'] = 30
@@ -91,14 +113,14 @@ def enhanced_water_data_fetch():
         try:
             login_page = session.get(login_url, timeout=10)
             
-            soup = BeautifulSoup(login_page.text, 'html.parser')
+            soup = BeautifulSoup(login_page.text, 'html.parser')  # type: ignore
             form = soup.find('form')
             
             if not form:
                 raise Exception("无法找到登录表单")
             
             form_data = {}
-            for input_elem in form.find_all('input'):
+            for input_elem in form.find_all('input'):  # type: ignore
                 name = input_elem.get('name')
                 value = input_elem.get('value', '')
                 if name:
