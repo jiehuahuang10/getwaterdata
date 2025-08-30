@@ -2,7 +2,7 @@ services:
   - type: web
     name: waterdata-web
     env: python
-    buildCommand: pip install flask requests beautifulsoup4 openpyxl pandas python-dotenv
+    buildCommand: pip install -r requirements.txt
     startCommand: python web_app_fixed.py
     envVars:
       - key: LOGIN_URL

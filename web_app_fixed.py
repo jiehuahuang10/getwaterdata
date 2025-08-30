@@ -12,8 +12,22 @@ from datetime import datetime, timedelta
 import threading
 import time
 
-# 导入Excel导出模块
-from excel_exporter import export_to_excel, export_simple_csv, update_excel_with_date, get_excel_existing_dates
+# 尝试导入Excel导出模块，如果失败则跳过
+try:
+    from excel_exporter import export_to_excel, export_simple_csv, update_excel_with_date, get_excel_existing_dates
+    EXCEL_EXPORT_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Excel导出模块不可用: {e}")
+    EXCEL_EXPORT_AVAILABLE = False
+    # 提供简单的替代函数
+    def export_to_excel(*args, **kwargs):
+        return None
+    def export_simple_csv(*args, **kwargs):
+        return None
+    def update_excel_with_date(*args, **kwargs):
+        return None
+    def get_excel_existing_dates(*args, **kwargs):
+        return []
 
 # 直接导入数据获取模块，避免subprocess编码问题
 import sys
