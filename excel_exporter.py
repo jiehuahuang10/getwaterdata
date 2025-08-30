@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# type: ignore
 """
 Excel导出功能模块
 """
