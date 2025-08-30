@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# type: ignore
 """
 水务数据获取Web界面 - 超简化云部署版本
 只保留核心功能，移除所有可能有问题的依赖
