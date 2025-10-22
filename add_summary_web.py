@@ -518,11 +518,13 @@ def get_info():
         })
 
 if __name__ == '__main__':
+    import os
+    port = int(os.environ.get('PORT', 5001))
     print("=" * 80)
     print("月度统计表添加工具 - 网页版")
     print("=" * 80)
     print(f"Excel文件: {EXCEL_PATH}")
-    print(f"访问地址: http://localhost:5001")
+    print(f"访问地址: http://0.0.0.0:{port}")
     print("=" * 80)
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=False, host='0.0.0.0', port=port)
 
