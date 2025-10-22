@@ -1,0 +1,168 @@
+name: KDocs Cookie维护
+
+on:
+  schedule:
+    # 每周一早上9点（北京时间）检查
+    - cron: '0 1 * * 1'
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: '强制更新Cookie'
+        required: false
+        default: 'false'
+
+jobs:
+  check-and-refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v3
+      
+      - name: 设置Python环境
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: 安装依赖
+        run: |
+          pip install requests
+      
+      - name: 恢复Cookie文件
+        run: |
+          if [ -n "${{ secrets.KDOCS_COOKIE_JSON }}" ]; then
+            echo '${{ secrets.KDOCS_COOKIE_JSON }}' > kdocs_cookies.json
+            echo "Cookie文件已恢复"
+          else
+            echo "警告: 未找到KDOCS_COOKIE_JSON secret"
+            exit 1
+          fi
+          
+          if [ -n "${{ secrets.KDOCS_COOKIE_META }}" ]; then
+            echo '${{ secrets.KDOCS_COOKIE_META }}' > kdocs_cookie_meta.json
+            echo "Cookie元数据已恢复"
+          fi
+      
+      - name: 检查Cookie有效期
+        id: check
+        continue-on-error: true
+        run: |
+          python kdocs_cookie_refresher.py > check_result.txt 2>&1
+          cat check_result.txt
+          
+          # 检查输出中是否包含警告
+          if grep -q "需要手动更新" check_result.txt; then
+            echo "status=need_update" >> $GITHUB_OUTPUT
+            exit 1
+          elif grep -q "Cookie状态良好" check_result.txt; then
+            echo "status=good" >> $GITHUB_OUTPUT
+            exit 0
+          else
+            echo "status=unknown" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+      
+      - name: 保存刷新后的Cookie
+        if: steps.check.outcome == 'success'
+        run: |
+          echo "Cookie已自动刷新"
+          echo "更新时间: $(date)" >> cookie_update_log.txt
+          
+          # 输出Cookie内容（用于手动更新Secret）
+          echo "如需更新GitHub Secret，请使用以下内容:"
+          echo "KDOCS_COOKIE_JSON:"
+          cat kdocs_cookies.json
+          echo ""
+          echo "KDOCS_COOKIE_META:"
+          cat kdocs_cookie_meta.json
+      
+      - name: 创建Issue提醒（Cookie即将过期）
+        if: steps.check.outcome == 'failure' && steps.check.outputs.status == 'need_update'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            let checkResult = '';
+            try {
+              checkResult = fs.readFileSync('check_result.txt', 'utf8');
+            } catch (e) {
+              checkResult = '无法读取检查结果';
+            }
+            
+            // 检查是否已有未关闭的Cookie更新Issue
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'kdocs-cookie'
+            });
+            
+            if (issues.data.length > 0) {
+              console.log('已存在Cookie更新Issue，不重复创建');
+              return;
+            }
+            
+            // 创建新Issue
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '⚠️ KDocs Cookie需要更新',
+              body: `## KDocs Cookie即将过期或已失效
+              
+### 检查结果
+\`\`\`
+${checkResult}
+\`\`\`
+
+### 更新步骤
+
+1. **在浏览器中登录KDocs**
+   - 访问: https://www.kdocs.cn
+   - 使用您的账号登录
+
+2. **获取Cookie**
+   - 按F12打开开发者工具
+   - 切换到Console标签
+   - 输入: \`document.cookie\`
+   - 复制输出内容
+
+3. **本地测试**
+   \`\`\`bash
+   python kdocs_cookie_login.py
+   # 粘贴Cookie
+   \`\`\`
+
+4. **更新GitHub Secret**
+   - 进入仓库 Settings → Secrets and variables → Actions
+   - 更新 \`KDOCS_COOKIE_JSON\` 的值为 \`kdocs_cookies.json\` 的内容
+   - 更新 \`KDOCS_COOKIE_META\` 的值为 \`kdocs_cookie_meta.json\` 的内容
+
+5. **验证更新**
+   - 手动触发此工作流
+   - 确认Cookie有效
+
+### 检查时间
+${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}
+
+### 自动化提醒
+此Issue由GitHub Actions自动创建，更新完成后请关闭此Issue。`,
+              labels: ['kdocs-cookie', 'maintenance', 'urgent']
+            });
+      
+      - name: 发送成功通知
+        if: steps.check.outcome == 'success'
+        run: |
+          echo "✅ Cookie状态良好"
+          echo "下次检查时间: 下周一"
+      
+      - name: 上传检查日志
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: cookie-check-log
+          path: |
+            check_result.txt
+            cookie_update_log.txt
+          retention-days: 30
+

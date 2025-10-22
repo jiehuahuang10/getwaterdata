@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>月度供水统计 - 石滩供水服务部</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .control-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+
+        .form-group select {
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.3s;
+            min-width: 120px;
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
+        }
+
+        .btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .period-info {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        .period-info h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .period-info p {
+            font-size: 1.1em;
+            opacity: 0.8;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-left: 5px solid;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card.shitan {
+            border-left-color: #e74c3c;
+        }
+
+        .stat-card.sanjiang {
+            border-left-color: #3498db;
+        }
+
+        .stat-card.shazhuang {
+            border-left-color: #2ecc71;
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .stat-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-icon {
+            font-size: 2em;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-card.shitan .stat-value {
+            color: #e74c3c;
+        }
+
+        .stat-card.sanjiang .stat-value {
+            color: #3498db;
+        }
+
+        .stat-card.shazhuang .stat-value {
+            color: #2ecc71;
+        }
+
+        .stat-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+            color: #7f8c8d;
+        }
+
+        .recent-data {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .recent-data h5 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .recent-values {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .recent-value {
+            background: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            border: 1px solid #dee2e6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #6c757d;
+        }
+
+        .loading .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            text-align: center;
+        }
+
+        .navigation {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #8b4513;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .control-group {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .period-info h3 {
+                font-size: 1.2em;
+            }
+
+            .stat-value {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 月度供水统计</h1>
+            <p>石滩供水服务部 - 数据分析平台</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <div class="form-group">
+                    <label for="year">选择年份:</label>
+                    <select id="year">
+                        <!-- 年份选项将通过JavaScript动态生成 -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="month">选择月份:</label>
+                    <select id="month">
+                        <option value="1">1月</option>
+                        <option value="2">2月</option>
+                        <option value="3">3月</option>
+                        <option value="4">4月</option>
+                        <option value="5">5月</option>
+                        <option value="6">6月</option>
+                        <option value="7">7月</option>
+                        <option value="8">8月</option>
+                        <option value="9">9月</option>
+                        <option value="10">10月</option>
+                        <option value="11">11月</option>
+                        <option value="12">12月</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="getMonthlyStats()">
+                    📈 获取统计数据
+                </button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="results"></div>
+        </div>
+
+        <div class="navigation">
+            <a href="/" class="nav-btn">🏠 返回首页</a>
+            <a href="/history" class="nav-btn">📚 历史数据</a>
+        </div>
+    </div>
+
+    <script>
+        // 初始化年份选择器
+        function initYearSelector() {
+            const yearSelect = document.getElementById('year');
+            const currentYear = new Date().getFullYear();
+            
+            // 生成年份选项（当前年份前后5年）
+            for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year + '年';
+                if (year === currentYear) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+        }
+
+        // 初始化月份选择器为当前月份
+        function initMonthSelector() {
+            const monthSelect = document.getElementById('month');
+            const currentMonth = new Date().getMonth() + 1;
+            monthSelect.value = currentMonth;
+        }
+
+        // 获取月度统计数据
+        async function getMonthlyStats() {
+            const year = document.getElementById('year').value;
+            const month = document.getElementById('month').value;
+            const resultsDiv = document.getElementById('results');
+            
+            if (!year || !month) {
+                alert('请选择年份和月份');
+                return;
+            }
+
+            // 显示加载状态
+            resultsDiv.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>正在统计 ${year}年${month}月 的供水数据...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/get_monthly_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ year: parseInt(year), month: parseInt(month) })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayResults(result.data);
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ 统计失败</h3>
+                            <p>${result.message}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('获取统计数据失败:', error);
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ 网络错误</h3>
+                        <p>无法连接到服务器，请稍后重试</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 显示统计结果
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = `
+                <div class="period-info">
+                    <h3>📅 ${data.period.description}</h3>
+                    <p>统计周期: ${data.period.start_date} 至 ${data.period.end_date}</p>
+                    <p>共找到 ${data.summary.total_rows_found} 天有效数据 (总周期 ${data.summary.total_days_in_range} 天)</p>
+                </div>
+
+                <div class="stats-container">
+            `;
+
+            // 显示三列统计数据
+            const columns = [
+                { key: '石滩', name: '石滩供水', icon: '🏢', class: 'shitan' },
+                { key: '三江', name: '三江供水', icon: '🌊', class: 'sanjiang' },
+                { key: '沙庄', name: '沙庄供水', icon: '🏘️', class: 'shazhuang' }
+            ];
+
+            columns.forEach(col => {
+                const stats = data.statistics[col.key];
+                if (stats) {
+                    html += `
+                        <div class="stat-card ${col.class}">
+                            <div class="stat-header">
+                                <div class="stat-title">${col.name}</div>
+                                <div class="stat-icon">${col.icon}</div>
+                            </div>
+                            <div class="stat-value">${stats.total.toLocaleString()}</div>
+                            <div class="stat-details">
+                                <span>数据点: ${stats.count}个</span>
+                                <span>日均: ${stats.average.toLocaleString()}</span>
+                            </div>
+                    `;
+
+                    if (stats.latest_values && stats.latest_values.length > 0) {
+                        html += `
+                            <div class="recent-data">
+                                <h5>📈 最近数据</h5>
+                                <div class="recent-values">
+                        `;
+                        stats.latest_values.forEach(item => {
+                            html += `<div class="recent-value">${item.date}: ${item.value.toLocaleString()}</div>`;
+                        });
+                        html += `
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    html += `</div>`;
+                } else {
+                    html += `
+                        <div class="stat-card ${col.class}">
+                            <div class="stat-header">
+                                <div class="stat-title">${col.name}</div>
+                                <div class="stat-icon">${col.icon}</div>
+                            </div>
+                            <div class="stat-value">0</div>
+                            <div class="stat-details">
+                                <span>暂无数据</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            html += `</div>`;
+
+            resultsDiv.innerHTML = html;
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initYearSelector();
+            initMonthSelector();
+            
+            // 自动加载当前月份的数据
+            getMonthlyStats();
+        });
+    </script>
+</body>
+</html>

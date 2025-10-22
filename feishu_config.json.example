@@ -1,0 +1,7 @@
+{
+  "app_id": "cli_xxxxxxxxxxxxx",
+  "app_secret": "YOUR_APP_SECRET_HERE",
+  "spreadsheet_token": "shtcnxxxxxxxxxxxxx",
+  "sheet_id": "工作表1"
+}
+
