@@ -35,6 +35,13 @@ Thumbs.db
 test_*.py
 debug_*.py
 
-# 数据文件（可选，如果不想上传Excel文件）
-# excel_exports/*.xlsx
-# *.json
+# Excel数据文件（包含敏感业务数据）
+excel_exports/*.xlsx
+
+# Cookie文件（敏感信息）
+kdocs_cookies.json
+kdocs_cookie_meta.json
+
+# 备份文件
+*_backup.xlsx
+*_测试.xlsx
