@@ -210,46 +210,169 @@ def start_task():
     
     return jsonify({'success': True, 'message': '任务已启动'})
 
+def calculate_recent_7days():
+    """计算最近7天的日期范围"""
+    today = datetime.now()
+    end_date = today - timedelta(days=1)  # 昨天
+    start_date = end_date - timedelta(days=7)  # 昨天往前推7天
+    
+    return start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')
+
 def run_data_task():
-    """执行数据获取任务"""
+    """执行数据获取任务 - 从水务系统获取真实数据"""
     global task_status
     
     try:
-        # 模拟数据获取过程
-        for i in range(1, 11):
-            time.sleep(0.5)
-            task_status['progress'] = i * 10
-            task_status['message'] = f'正在获取数据... {i * 10}%'
+        task_status['running'] = True
+        task_status['progress'] = 0
+        task_status['message'] = '开始获取数据...'
+        task_status['error'] = None
+        task_status['start_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        task_status['data'] = None
         
-        # 读取最新的JSON文件获取真实数据结构
-        json_files = glob.glob('WEB_COMPLETE_8_METERS_*.json')
-        if json_files:
-            json_files.sort(reverse=True)
-            latest_file = json_files[0]
-            with open(latest_file, 'r', encoding='utf-8') as f:
-                file_data = json.load(f)
+        # 更新进度
+        task_status['progress'] = 10
+        task_status['message'] = '正在登录系统...'
+        time.sleep(1)
+        
+        # 直接调用数据获取函数
+        task_status['progress'] = 30
+        task_status['message'] = '正在获取数据...'
+        
+        # 导入必要的库
+        import requests
+        from bs4 import BeautifulSoup
+        import hashlib
+        
+        session = requests.Session()
+        
+        # 登录
+        task_status['progress'] = 40
+        task_status['message'] = '正在登录水务系统...'
+        
+        login_url = "http://axwater.dmas.cn/Login.aspx"
+        login_page = session.get(login_url)
+        
+        soup = BeautifulSoup(login_page.text, 'html.parser')
+        form = soup.find('form')
+        form_data = {}
+        
+        for input_elem in form.find_all('input'):
+            name = input_elem.get('name')
+            value = input_elem.get('value', '')
+            if name:
+                form_data[name] = value
+        
+        username = '13509288500'
+        password = '288500'
+        form_data['user'] = username
+        form_data['pwd'] = hashlib.md5(password.encode('utf-8')).hexdigest()
+        
+        login_response = session.post(login_url, data=form_data)
+        
+        if "window.location='frmMain.aspx'" in login_response.text:
+            task_status['progress'] = 60
+            task_status['message'] = '登录成功，正在访问报表页面...'
             
-            # 前端调用: displayData(status.data)
-            # displayData内部检查: data.data.rows
-            # 所以 status.data 应该是 {data: {rows: [...]}}
-            # file_data 是 {success: true, data: {rows: [...]}}
-            task_status['data'] = file_data  # 直接使用文件数据
+            # 跳转到主页面
+            main_url = "http://axwater.dmas.cn/frmMain.aspx"
+            main_response = session.get(main_url)
+            
+            if main_response.status_code == 200:
+                # 访问报表页面
+                task_status['progress'] = 70
+                task_status['message'] = '正在获取水表数据...'
+                time.sleep(1)
+                
+                report_url = "http://axwater.dmas.cn/reports/FluxRpt.aspx"
+                report_response = session.get(report_url)
+                
+                if '登录超时' not in report_response.text:
+                    # 获取数据
+                    task_status['progress'] = 80
+                    task_status['message'] = '正在调用数据API...'
+                    
+                    start_date, end_date = calculate_recent_7days()
+                    
+                    meter_ids = [
+                        '1261181000263', '1261181000300', '1262330402331',
+                        '2190066', '2190493', '2501200108', '2520005', '2520006'
+                    ]
+                    
+                    formatted_node_ids = "'" + "','".join(meter_ids) + "'"
+                    
+                    api_url = "http://axwater.dmas.cn/reports/ashx/getRptWaterYield.ashx"
+                    api_params = {
+                        'nodeId': formatted_node_ids,
+                        'startDate': start_date,
+                        'endDate': end_date,
+                        'meterType': '-1',
+                        'statisticsType': 'flux',
+                        'type': 'dayRpt'
+                    }
+                    
+                    api_headers = {
+                        'Referer': report_url,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
+                    
+                    api_response = session.post(api_url, data=api_params, headers=api_headers)
+                    
+                    if api_response.text and len(api_response.text) > 10:
+                        try:
+                            data = api_response.json()
+                            
+                            # 保存数据
+                            timestamp = time.strftime('%Y%m%d_%H%M%S')
+                            filename = f"WEB_COMPLETE_8_METERS_{timestamp}.json"
+                            
+                            output_data = {
+                                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+                                'source': 'web_interface_scraper',
+                                'success': True,
+                                'data_type': 'json',
+                                'calculation_date': datetime.now().strftime('%Y-%m-%d'),
+                                'date_range': {
+                                    'start': start_date,
+                                    'end': end_date,
+                                    'description': '昨天往前推7天的数据'
+                                },
+                                'meter_count': len(meter_ids),
+                                'data': data,
+                                'note': f'通过Web界面获取的{datetime.now().strftime("%Y年%m月%d日")}最新数据'
+                            }
+                            
+                            with open(filename, 'w', encoding='utf-8') as f:
+                                json.dump(output_data, f, ensure_ascii=False, indent=2)
+                            
+                            task_status['data'] = output_data
+                            task_status['progress'] = 100
+                            task_status['message'] = f'数据获取成功！共获取{len(data.get("rows", []))}个水表数据'
+                            
+                        except json.JSONDecodeError:
+                            task_status['error'] = 'API返回的不是有效的JSON数据'
+                            task_status['message'] = '数据解析失败'
+                    else:
+                        task_status['error'] = 'API返回空响应'
+                        task_status['message'] = '数据获取失败'
+                else:
+                    task_status['error'] = '访问报表页面时显示登录超时'
+                    task_status['message'] = '会话已过期'
+            else:
+                task_status['error'] = '无法访问主页面'
+                task_status['message'] = '系统访问失败'
         else:
-            task_status['data'] = {
-                'data': {
-                    'rows': []
-                }
-            }
-        
-        task_status['message'] = '✅ 数据获取成功！'
-        task_status['progress'] = 100
-        task_status['end_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+            task_status['error'] = '登录失败，请检查账号密码'
+            task_status['message'] = '登录失败'
+            
     except Exception as e:
         task_status['error'] = str(e)
         task_status['message'] = f'❌ 获取失败: {str(e)}'
     finally:
         task_status['running'] = False
+        task_status['end_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 @app.route('/history')
 def history_page():
