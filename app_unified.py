@@ -21,6 +21,16 @@ app = Flask(__name__)
 EXCEL_PATH = "excel_exports/石滩区分区计量.xlsx"
 DATA_SOURCE_PATH = "excel_exports/石滩供水服务部每日总供水情况.xlsx"
 
+# ==================== 辅助函数 ====================
+
+def calculate_recent_7days():
+    """计算最近7天的日期范围"""
+    today = datetime.now()
+    end_date = today - timedelta(days=1)  # 昨天
+    start_date = end_date - timedelta(days=7)  # 昨天往前推7天
+    
+    return start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')
+
 # ==================== 首页：功能选择 ====================
 
 @app.route('/')
@@ -122,7 +132,14 @@ def add_summary():
 @app.route('/data')
 def data_page():
     """水务数据获取页面 - 使用原有的完整界面"""
-    return render_template('index.html')
+    # 计算日期范围
+    start_date, end_date = calculate_recent_7days()
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    return render_template('index.html', 
+                         current_time=current_time,
+                         start_date=start_date,
+                         end_date=end_date)
 
 # 导入水务数据获取的所有功能路由
 # 这些路由来自 web_app_fixed.py
@@ -209,14 +226,6 @@ def start_task():
     thread.start()
     
     return jsonify({'success': True, 'message': '任务已启动'})
-
-def calculate_recent_7days():
-    """计算最近7天的日期范围"""
-    today = datetime.now()
-    end_date = today - timedelta(days=1)  # 昨天
-    start_date = end_date - timedelta(days=7)  # 昨天往前推7天
-    
-    return start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')
 
 def run_data_task():
     """执行数据获取任务 - 从水务系统获取真实数据"""
