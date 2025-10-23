@@ -153,7 +153,8 @@ def get_data():
             latest_file = json_files[0]
             with open(latest_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            return jsonify({'success': True, 'data': data})
+            # 直接返回JSON数据（已包含success字段）
+            return jsonify(data)
         else:
             return jsonify({'success': False, 'message': '暂无数据'})
     except Exception as e:
