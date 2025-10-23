@@ -152,9 +152,12 @@ def get_data():
             json_files.sort(reverse=True)
             latest_file = json_files[0]
             with open(latest_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            # 直接返回JSON数据（已包含success字段）
-            return jsonify(data)
+                file_data = json.load(f)
+            # 返回符合前端期望的格式：success和data都在最外层
+            return jsonify({
+                'success': file_data.get('success', True),
+                'data': file_data  # 整个文件数据作为data字段
+            })
         else:
             return jsonify({'success': False, 'message': '暂无数据'})
     except Exception as e:
