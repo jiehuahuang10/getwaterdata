@@ -11,7 +11,7 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for
 import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 import copy
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import re
 
@@ -142,6 +142,23 @@ task_status = {
     'end_time': None
 }
 
+@app.route('/get_data')
+def get_data():
+    """获取现有数据（兼容原有接口）"""
+    # 查找最新的JSON文件
+    try:
+        json_files = glob.glob('WEB_COMPLETE_8_METERS_*.json')
+        if json_files:
+            json_files.sort(reverse=True)
+            latest_file = json_files[0]
+            with open(latest_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return jsonify({'success': True, 'data': data})
+        else:
+            return jsonify({'success': False, 'message': '暂无数据'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
 @app.route('/status')
 def get_status():
     """获取任务状态"""
@@ -228,6 +245,54 @@ def get_history():
         return jsonify({'success': True, 'data': history_data})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/task_status')
+def task_status_route():
+    """获取任务状态（兼容路由）"""
+    return jsonify(task_status)
+
+@app.route('/export_excel', methods=['POST'])
+def export_excel():
+    """导出Excel（功能暂不可用）"""
+    return jsonify({'success': False, 'message': 'Excel导出功能需要额外的依赖包'})
+
+@app.route('/update_specific_excel', methods=['POST'])
+def update_specific_excel():
+    """更新特定Excel（功能暂不可用）"""
+    return jsonify({'success': False, 'message': 'Excel更新功能需要额外的依赖包'})
+
+@app.route('/get_excel_files')
+def get_excel_files():
+    """获取Excel文件列表"""
+    try:
+        excel_files = glob.glob('excel_exports/*.xlsx')
+        files_info = []
+        for file in excel_files:
+            files_info.append({
+                'name': os.path.basename(file),
+                'path': file
+            })
+        return jsonify({'success': True, 'files': files_info})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/get_available_dates')
+def get_available_dates():
+    """获取可用的日期列表"""
+    try:
+        # 返回最近30天的日期
+        dates = []
+        for i in range(30):
+            date = datetime.now() - timedelta(days=i)
+            dates.append(date.strftime('%Y-%m-%d'))
+        return jsonify({'success': True, 'dates': dates})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/update_excel_date', methods=['POST'])
+def update_excel_date():
+    """按日期更新Excel（功能暂不可用）"""
+    return jsonify({'success': False, 'message': 'Excel更新功能需要额外的依赖包'})
 
 # ==================== 启动应用 ====================
 
