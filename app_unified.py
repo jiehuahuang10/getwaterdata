@@ -164,10 +164,16 @@ def get_data():
             #
             # JSON文件是: {success: true, data: {rows: [...]}}
             # 所以需要包装一层
-            return jsonify({
+            # 调试：打印返回的数据结构
+            result = {
                 'success': True,
                 'data': file_data  # 包含整个JSON,这样result.data.data.rows就能访问到
-            })
+            }
+            print(f"DEBUG: 返回数据有success? {'success' in result}")
+            print(f"DEBUG: success值: {result.get('success')}")
+            print(f"DEBUG: 有data? {'data' in result}")
+            print(f"DEBUG: data有data? {'data' in result.get('data', {})}")
+            return jsonify(result)
         else:
             return jsonify({'success': False, 'message': '暂无数据'})
     except Exception as e:
@@ -215,12 +221,26 @@ def run_data_task():
             task_status['progress'] = i * 10
             task_status['message'] = f'正在获取数据... {i * 10}%'
         
-        # 模拟成功结果
-        task_status['data'] = {
-            'meters': 8,
-            'total_flow': 1003327,
-            'message': '数据获取成功'
-        }
+        # 读取最新的JSON文件获取真实数据结构
+        json_files = glob.glob('WEB_COMPLETE_8_METERS_*.json')
+        if json_files:
+            json_files.sort(reverse=True)
+            latest_file = json_files[0]
+            with open(latest_file, 'r', encoding='utf-8') as f:
+                file_data = json.load(f)
+            
+            # 前端调用: displayData(status.data)
+            # displayData内部检查: data.data.rows
+            # 所以 status.data 应该是 {data: {rows: [...]}}
+            # file_data 是 {success: true, data: {rows: [...]}}
+            task_status['data'] = file_data  # 直接使用文件数据
+        else:
+            task_status['data'] = {
+                'data': {
+                    'rows': []
+                }
+            }
+        
         task_status['message'] = '✅ 数据获取成功！'
         task_status['progress'] = 100
         task_status['end_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
