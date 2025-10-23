@@ -153,10 +153,20 @@ def get_data():
             latest_file = json_files[0]
             with open(latest_file, 'r', encoding='utf-8') as f:
                 file_data = json.load(f)
-            # 返回符合前端期望的格式：success和data都在最外层
+            
+            # 前端逻辑分析:
+            # 1. 第1610行: if (result.success && result.data) displayData(result.data)
+            # 2. 第1147行: if (!data.data || !data.data.rows)
+            # 
+            # 数据流: result.data 传给 displayData, 然后访问 data.data.rows
+            # 所以需要: result.data.data.rows 存在
+            # 即: result = {success: true, data: {data: {rows: [...]}}}
+            #
+            # JSON文件是: {success: true, data: {rows: [...]}}
+            # 所以需要包装一层
             return jsonify({
-                'success': file_data.get('success', True),
-                'data': file_data  # 整个文件数据作为data字段
+                'success': True,
+                'data': file_data  # 包含整个JSON,这样result.data.data.rows就能访问到
             })
         else:
             return jsonify({'success': False, 'message': '暂无数据'})
