@@ -159,14 +159,14 @@ class SpecificExcelWriter:
                     # 写入数据
                     if value is not None:
                         sheet.cell(target_row, col_num, value)
-                        print(f"  ✓ {excel_name}(第{col_num}列): {value}")
+                        print(f"  [OK] {excel_name}(第{col_num}列): {value}")
                     else:
                         sheet.cell(target_row, col_num, None)  # 空白
-                        print(f"  ○ {excel_name}(第{col_num}列): 空白")
+                        print(f"  [EMPTY] {excel_name}(第{col_num}列): 空白")
                     
                     updated_count += 1
                 else:
-                    print(f"  ✗ 未找到映射：{system_name}")
+                    print(f"  [SKIP] 未找到映射：{system_name}")
             
             # 保存文件
             success = self.save_workbook_with_retry(wb)

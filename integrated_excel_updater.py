@@ -74,7 +74,7 @@ def update_excel_with_real_data(target_date):
         success = writer.write_water_data(target_date, extracted_data)
         
         if success:
-            print("✓ Excel文件更新成功！")
+            print("[SUCCESS] Excel文件更新成功！")
             return {
                 'success': True,
                 'message': f'成功更新 {len(extracted_data)} 个水表的数据到Excel文件',
@@ -82,7 +82,7 @@ def update_excel_with_real_data(target_date):
                 'target_date': target_date
             }
         else:
-            print("✗ Excel文件更新失败")
+            print("[ERROR] Excel文件更新失败")
             return {
                 'success': False,
                 'error': 'Excel文件更新失败'
