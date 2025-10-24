@@ -35,8 +35,9 @@ def calculate_recent_7days():
 
 @app.route('/')
 def index():
-    """首页 - 显示两个功能入口"""
-    return render_template('index_unified.html')
+    """首页 - 显示三个功能入口"""
+    # 强制返回主页模板
+    return render_template('index_unified.html'), 200, {'Cache-Control': 'no-cache, no-store, must-revalidate'}
 
 # ==================== 功能1：月度统计表添加 ====================
 
