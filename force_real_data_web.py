@@ -48,7 +48,7 @@ def try_direct_api_with_retry(target_date, max_retries=3):
     """直接API调用，多次重试"""
     
     for attempt in range(max_retries):
-        print(f"  🔄 API重试 {attempt + 1}/{max_retries}")
+        print(f"  [RETRY] API重试 {attempt + 1}/{max_retries}")
         
         session = requests.Session()
         
@@ -87,17 +87,21 @@ def get_from_existing_data_files(target_date):
                     data = json.load(f)
                 
                 if 'data' in data and 'rows' in data['data']:
+                    # 检查是否有这个日期的数据（只要key存在就返回）
+                    has_date = False
                     for row in data['data']['rows']:
                         if isinstance(row, dict) and target_date in row:
-                            value = row[target_date]
-                            if isinstance(value, (int, float)) and value > 0:
-                                print(f"  [FOUND] 在 {filename} 中找到 {target_date} 的真实数据！")
-                                return {
-                                    'success': True,
-                                    'data': data['data'],
-                                    'source': f'existing_file_{filename}',
-                                    'target_date': target_date
-                                }
+                            has_date = True
+                            break
+                    
+                    if has_date:
+                        print(f"  [FOUND] 在 {filename} 中找到 {target_date} 的数据！")
+                        return {
+                            'success': True,
+                            'data': data['data'],
+                            'source': f'existing_file_{filename}',
+                            'target_date': target_date
+                        }
             except Exception as e:
                 print(f"  [WARNING] 读取 {filename} 失败: {e}")
                 continue
