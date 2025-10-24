@@ -91,15 +91,6 @@ def sync_excel_to_github(file_path, commit_message):
             print("[GITHUB SYNC] Remote 'origin' exists, updating URL...")
             subprocess.run(['git', 'remote', 'set-url', 'origin', repo_url], check=False)
         
-        # 先 stash 任何未提交的更改（避免冲突）
-        print("[GITHUB SYNC] Stashing any uncommitted changes...")
-        subprocess.run(
-            ['git', 'stash', '--include-untracked'],
-            capture_output=True,
-            text=True,
-            timeout=10
-        )
-        
         # 确保在 main 分支上
         print("[GITHUB SYNC] Checking out main branch...")
         checkout_result = subprocess.run(
@@ -110,20 +101,6 @@ def sync_excel_to_github(file_path, commit_message):
         )
         if checkout_result.returncode != 0:
             print(f"[GITHUB SYNC] Checkout stderr: {checkout_result.stderr}")
-        
-        # 拉取最新代码
-        print("[GITHUB SYNC] Pulling latest changes from GitHub...")
-        pull_result = subprocess.run(
-            ['git', 'pull', 'origin', 'main'],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        print(f"[GITHUB SYNC] Pull result: {pull_result.returncode}")
-        if pull_result.stdout:
-            print(f"[GITHUB SYNC] Pull stdout: {pull_result.stdout}")
-        if pull_result.stderr:
-            print(f"[GITHUB SYNC] Pull stderr: {pull_result.stderr}")
         
         # Git 操作
         print(f"[GITHUB SYNC] Adding file: {file_path}")
@@ -299,6 +276,49 @@ def get_info():
             'message': f'读取Excel文件失败: {str(e)}'
         })
 
+def prepare_git_before_modify():
+    """在修改文件前准备 Git 环境"""
+    import subprocess
+    
+    try:
+        print("[GIT PREP] Preparing Git environment before file modification...")
+        
+        # 获取 GitHub Token
+        github_token = os.environ.get('GITHUB_TOKEN')
+        if not github_token:
+            print("[GIT PREP] No GITHUB_TOKEN, skipping Git sync")
+            return
+        
+        # 配置 Git remote
+        repo_url = f'https://{github_token}@github.com/jiehuahuang10/getwaterdata.git'
+        
+        check_remote = subprocess.run(
+            ['git', 'remote', 'get-url', 'origin'],
+            capture_output=True,
+            text=True
+        )
+        
+        if check_remote.returncode != 0:
+            subprocess.run(['git', 'remote', 'add', 'origin', repo_url], check=False)
+        else:
+            subprocess.run(['git', 'remote', 'set-url', 'origin', repo_url], check=False)
+        
+        # 切换到 main 分支
+        subprocess.run(['git', 'checkout', 'main'], capture_output=True, timeout=10)
+        
+        # 拉取最新代码
+        print("[GIT PREP] Pulling latest changes from GitHub...")
+        pull_result = subprocess.run(
+            ['git', 'pull', 'origin', 'main', '--rebase'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        print(f"[GIT PREP] Pull completed: {pull_result.returncode}")
+        
+    except Exception as e:
+        print(f"[GIT PREP] Error: {str(e)}")
+
 @app.route('/add_summary', methods=['POST'])
 def add_summary():
     """添加月度统计表"""
@@ -306,6 +326,9 @@ def add_summary():
         data = request.get_json()
         month_offset = data.get('month_offset', 1)
         sale_values = data.get('sale_values', [])
+        
+        # 在修改文件前，先拉取最新代码
+        prepare_git_before_modify()
         
         # 导入添加函数
         from add_summary_web import add_monthly_summary_to_main
