@@ -91,10 +91,30 @@ def sync_excel_to_github(file_path, commit_message):
             print("[GITHUB SYNC] Remote 'origin' exists, updating URL...")
             subprocess.run(['git', 'remote', 'set-url', 'origin', repo_url], check=False)
         
-        # 拉取最新代码（避免冲突）
+        # 先 stash 任何未提交的更改（避免冲突）
+        print("[GITHUB SYNC] Stashing any uncommitted changes...")
+        subprocess.run(
+            ['git', 'stash', '--include-untracked'],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        # 确保在 main 分支上
+        print("[GITHUB SYNC] Checking out main branch...")
+        checkout_result = subprocess.run(
+            ['git', 'checkout', 'main'],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if checkout_result.returncode != 0:
+            print(f"[GITHUB SYNC] Checkout stderr: {checkout_result.stderr}")
+        
+        # 拉取最新代码
         print("[GITHUB SYNC] Pulling latest changes from GitHub...")
         pull_result = subprocess.run(
-            ['git', 'pull', 'origin', 'main', '--rebase'],
+            ['git', 'pull', 'origin', 'main'],
             capture_output=True,
             text=True,
             timeout=30
