@@ -1,0 +1,60 @@
+name: 定时更新Excel数据
+
+on:
+  schedule:
+    # 每天北京时间下午6点（UTC时间上午10点）
+    - cron: '0 10 * * *'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  update-excel:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📅 获取当前日期
+        id: date
+        run: |
+          # 获取昨天的日期（因为通常是更新昨天的数据）
+          echo "target_date=$(date -d '1 day ago' '+%Y-%m-%d')" >> $GITHUB_OUTPUT
+          echo "current_time=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+      
+      - name: 🔄 触发Render自动更新
+        run: |
+          echo "🕐 执行时间: ${{ steps.date.outputs.current_time }}"
+          echo "📅 目标日期: ${{ steps.date.outputs.target_date }}"
+          
+          response=$(curl -s -X POST \
+            https://getwaterdata.onrender.com/execute_auto_update \
+            -H "Content-Type: application/json" \
+            -d "{\"date\": \"${{ steps.date.outputs.target_date }}\"}" \
+            -w "\n%{http_code}")
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          
+          echo "📡 HTTP状态码: $http_code"
+          echo "📄 响应内容: $body"
+          
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Excel更新任务已成功触发"
+            
+            # 检查响应中的success字段
+            success=$(echo "$body" | jq -r '.success // empty')
+            if [ "$success" = "true" ]; then
+              echo "🎉 Excel文件更新成功！"
+            else
+              echo "⚠️ 任务触发成功但执行可能有问题"
+              echo "$body" | jq '.'
+            fi
+          else
+            echo "❌ 请求失败，HTTP状态码: $http_code"
+            echo "$body"
+            exit 1
+          fi
+      
+      - name: 📊 发送通知（可选）
+        if: always()
+        run: |
+          echo "任务执行完成"
+          echo "如需邮件通知，可以在这里配置"
+
