@@ -31,6 +31,74 @@ def calculate_recent_7days():
     
     return start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')
 
+def sync_excel_to_github(file_path, commit_message):
+    """
+    将 Excel 文件同步到 GitHub
+    
+    参数:
+        file_path: 文件路径
+        commit_message: 提交信息
+    
+    返回:
+        dict: {'success': bool, 'message': str}
+    """
+    import subprocess
+    
+    try:
+        # 检查文件是否存在
+        if not os.path.exists(file_path):
+            return {'success': False, 'message': f'文件不存在: {file_path}'}
+        
+        # 获取 GitHub Token
+        github_token = os.environ.get('GITHUB_TOKEN')
+        if not github_token:
+            return {'success': False, 'message': '未配置 GITHUB_TOKEN 环境变量'}
+        
+        # 配置 Git 用户信息
+        subprocess.run(['git', 'config', 'user.email', 'render-bot@getwaterdata.com'], check=False)
+        subprocess.run(['git', 'config', 'user.name', 'Render Auto Sync'], check=False)
+        
+        # 配置 Git 使用 token 认证
+        repo_url = f'https://{github_token}@github.com/jiehuahuang10/getwaterdata.git'
+        subprocess.run(['git', 'remote', 'set-url', 'origin', repo_url], check=False)
+        
+        # Git 操作
+        subprocess.run(['git', 'add', file_path], check=True)
+        
+        result = subprocess.run(
+            ['git', 'commit', '-m', commit_message],
+            capture_output=True,
+            text=True
+        )
+        
+        # 如果没有变化，返回成功（没有需要提交的内容）
+        if 'nothing to commit' in result.stdout or 'nothing to commit' in result.stderr:
+            return {'success': True, 'message': '文件无变化，无需同步'}
+        
+        # 推送到 GitHub
+        push_result = subprocess.run(
+            ['git', 'push', 'origin', 'main'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if push_result.returncode != 0:
+            return {
+                'success': False,
+                'message': f'推送失败: {push_result.stderr}'
+            }
+        
+        return {
+            'success': True,
+            'message': '成功同步到 GitHub'
+        }
+        
+    except subprocess.TimeoutExpired:
+        return {'success': False, 'message': 'Git 操作超时'}
+    except Exception as e:
+        return {'success': False, 'message': f'同步失败: {str(e)}'}
+
 # ==================== 首页：功能选择 ====================
 
 @app.route('/')
@@ -143,9 +211,22 @@ def add_summary():
             sale_values=sale_values
         )
         
-        # 添加下载链接到返回结果
+        # 如果成功，自动同步到 GitHub
         if result.get('success'):
             result['download_url'] = '/download_excel/石滩区分区计量.xlsx'
+            
+            # 尝试自动同步到 GitHub
+            sync_result = sync_excel_to_github(
+                'excel_exports/石滩区分区计量.xlsx',
+                f"自动更新: 添加{result.get('month', '月度')}统计表"
+            )
+            
+            if sync_result['success']:
+                result['message'] += ' | ✅ 已自动同步到GitHub'
+                result['github_synced'] = True
+            else:
+                result['message'] += f" | ⚠️ GitHub同步失败: {sync_result['message']}"
+                result['github_synced'] = False
         
         return jsonify(result)
     except Exception as e:
