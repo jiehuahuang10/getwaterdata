@@ -44,17 +44,30 @@ def sync_excel_to_github(file_path, commit_message):
     """
     import subprocess
     
+    print("=" * 80)
+    print("[GITHUB SYNC] Starting synchronization process...")
+    print(f"[GITHUB SYNC] File: {file_path}")
+    print(f"[GITHUB SYNC] Commit message: {commit_message}")
+    print("=" * 80)
+    
     try:
         # 检查文件是否存在
         if not os.path.exists(file_path):
+            print(f"[GITHUB SYNC] ERROR: File does not exist: {file_path}")
             return {'success': False, 'message': f'文件不存在: {file_path}'}
+        
+        print(f"[GITHUB SYNC] File exists: {file_path}")
         
         # 获取 GitHub Token
         github_token = os.environ.get('GITHUB_TOKEN')
         if not github_token:
+            print("[GITHUB SYNC] ERROR: GITHUB_TOKEN not configured")
             return {'success': False, 'message': '未配置 GITHUB_TOKEN 环境变量'}
         
+        print("[GITHUB SYNC] GITHUB_TOKEN found")
+        
         # 配置 Git 用户信息
+        print("[GITHUB SYNC] Configuring Git user info...")
         subprocess.run(['git', 'config', 'user.email', 'render-bot@getwaterdata.com'], check=False)
         subprocess.run(['git', 'config', 'user.name', 'Render Auto Sync'], check=False)
         
@@ -62,6 +75,7 @@ def sync_excel_to_github(file_path, commit_message):
         repo_url = f'https://{github_token}@github.com/jiehuahuang10/getwaterdata.git'
         
         # 检查 remote 是否存在
+        print("[GITHUB SYNC] Checking Git remote...")
         check_remote = subprocess.run(
             ['git', 'remote', 'get-url', 'origin'],
             capture_output=True,
@@ -70,46 +84,71 @@ def sync_excel_to_github(file_path, commit_message):
         
         if check_remote.returncode != 0:
             # remote 不存在，添加它
+            print("[GITHUB SYNC] Remote 'origin' not found, adding it...")
             subprocess.run(['git', 'remote', 'add', 'origin', repo_url], check=False)
         else:
             # remote 存在，更新 URL
+            print("[GITHUB SYNC] Remote 'origin' exists, updating URL...")
             subprocess.run(['git', 'remote', 'set-url', 'origin', repo_url], check=False)
         
         # 拉取最新代码（避免冲突）
-        subprocess.run(
+        print("[GITHUB SYNC] Pulling latest changes from GitHub...")
+        pull_result = subprocess.run(
             ['git', 'pull', 'origin', 'main', '--rebase'],
             capture_output=True,
             text=True,
             timeout=30
         )
+        print(f"[GITHUB SYNC] Pull result: {pull_result.returncode}")
+        if pull_result.stdout:
+            print(f"[GITHUB SYNC] Pull stdout: {pull_result.stdout}")
+        if pull_result.stderr:
+            print(f"[GITHUB SYNC] Pull stderr: {pull_result.stderr}")
         
         # Git 操作
+        print(f"[GITHUB SYNC] Adding file: {file_path}")
         subprocess.run(['git', 'add', file_path], check=True)
         
+        print("[GITHUB SYNC] Committing changes...")
         result = subprocess.run(
             ['git', 'commit', '-m', commit_message],
             capture_output=True,
             text=True
         )
+        print(f"[GITHUB SYNC] Commit result: {result.returncode}")
+        if result.stdout:
+            print(f"[GITHUB SYNC] Commit stdout: {result.stdout}")
+        if result.stderr:
+            print(f"[GITHUB SYNC] Commit stderr: {result.stderr}")
         
         # 如果没有变化，返回成功（没有需要提交的内容）
         if 'nothing to commit' in result.stdout or 'nothing to commit' in result.stderr:
+            print("[GITHUB SYNC] No changes to commit")
             return {'success': True, 'message': '文件无变化，无需同步'}
         
         # 推送到 GitHub
+        print("[GITHUB SYNC] Pushing to GitHub...")
         push_result = subprocess.run(
             ['git', 'push', 'origin', 'main'],
             capture_output=True,
             text=True,
             timeout=30
         )
+        print(f"[GITHUB SYNC] Push result: {push_result.returncode}")
+        if push_result.stdout:
+            print(f"[GITHUB SYNC] Push stdout: {push_result.stdout}")
+        if push_result.stderr:
+            print(f"[GITHUB SYNC] Push stderr: {push_result.stderr}")
         
         if push_result.returncode != 0:
+            print(f"[GITHUB SYNC] ERROR: Push failed")
             return {
                 'success': False,
                 'message': f'推送失败: {push_result.stderr}'
             }
         
+        print("[GITHUB SYNC] SUCCESS: Synced to GitHub!")
+        print("=" * 80)
         return {
             'success': True,
             'message': '成功同步到 GitHub'
