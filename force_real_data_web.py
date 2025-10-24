@@ -258,7 +258,7 @@ def fetch_data_from_api_range(session, start_date, end_date, target_date):
 def create_real_data_structure(target_date):
     """创建真实数据结构（最后的备用方案）"""
     
-    print("🔧 创建真实数据结构...")
+    print("[INFO] 创建真实数据结构...")
     
     # 水表信息
     meter_info = [
