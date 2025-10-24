@@ -19,29 +19,29 @@ def md5_hash(text):
 def force_get_real_data_for_web(target_date):
     """为Web应用强制获取指定日期的真实数据"""
     
-    print(f"🎯 强制获取 {target_date} 的真实数据（Web集成版）")
+    print(f"[TARGET] 强制获取 {target_date} 的真实数据（Web集成版）")
     
     # 直接使用成功的API调用策略
-    print(f"🚀 使用API直接获取真实数据...")
+    print(f"[START] 使用API直接获取真实数据...")
     
     try:
         # 尝试API调用获取真实数据
         result = try_direct_api_with_retry(target_date)
         if result and result.get('success'):
-            print(f"✅ 成功获取真实数据！")
+            print(f"[SUCCESS] 成功获取真实数据！")
             return result
         else:
-            print(f"⚠️ API调用失败，尝试本地数据文件...")
+            print(f"[WARNING] API调用失败，尝试本地数据文件...")
             # 如果API失败，尝试从本地文件获取
             result = get_from_existing_data_files(target_date)
             if result and result.get('success'):
-                print(f"✅ 从本地文件获取成功！")
+                print(f"[SUCCESS] 从本地文件获取成功！")
                 return result
     except Exception as e:
-        print(f"❌ 获取数据异常: {e}")
+        print(f"[ERROR] 获取数据异常: {e}")
     
     # 如果都失败，创建正确的数据结构
-    print("🔧 创建标准数据结构...")
+    print("[INFO] 创建标准数据结构...")
     return create_real_data_structure(target_date)
 
 def try_direct_api_with_retry(target_date, max_retries=3):
@@ -99,13 +99,13 @@ def get_from_existing_data_files(target_date):
                                     'target_date': target_date
                                 }
             except Exception as e:
-                print(f"  ⚠️ 读取 {filename} 失败: {e}")
+                print(f"  [WARNING] 读取 {filename} 失败: {e}")
                 continue
         
         return None
         
     except Exception as e:
-        print(f"❌ 检查现有文件异常: {e}")
+        print(f"[ERROR] 检查现有文件异常: {e}")
         return None
 
 def login_to_system(session):
@@ -141,7 +141,7 @@ def login_to_system(session):
         return False
         
     except Exception as e:
-        print(f"  ❌ 登录异常: {e}")
+        print(f"  [ERROR] 登录异常: {e}")
         return False
 
 def fetch_data_from_api(session, target_date):
@@ -199,7 +199,7 @@ def fetch_data_from_api(session, target_date):
         return None
         
     except Exception as e:
-        print(f"  ❌ API调用异常: {e}")
+        print(f"  [ERROR] API调用异常: {e}")
         return None
 
 def fetch_data_from_api_range(session, start_date, end_date, target_date):
@@ -252,7 +252,7 @@ def fetch_data_from_api_range(session, start_date, end_date, target_date):
         return None
         
     except Exception as e:
-        print(f"  ❌ 范围API调用异常: {e}")
+        print(f"  [ERROR] 范围API调用异常: {e}")
         return None
 
 def create_real_data_structure(target_date):
@@ -314,7 +314,7 @@ def create_real_data_structure(target_date):
                 }
     
     except Exception as e:
-        print(f"⚠️ 创建数据结构异常: {e}")
+        print(f"[WARNING] 创建数据结构异常: {e}")
     
     # 最基础的数据结构
     rows = []
@@ -341,27 +341,27 @@ def test_force_get_real_data():
     """测试强制获取真实数据"""
     target_date = "2025-07-22"
     
-    print("🚀 测试强制获取真实数据")
-    print(f"🎯 目标日期: {target_date}")
+    print("[TEST] 测试强制获取真实数据")
+    print(f"[TARGET] 目标日期: {target_date}")
     print("=" * 60)
     
     result = force_get_real_data_for_web(target_date)
     
     if result and result.get('success'):
-        print(f"\n🎉 成功获取 {target_date} 的数据结构！")
-        print(f"📊 数据来源: {result.get('source', 'unknown')}")
-        print(f"📝 说明: {result.get('note', '无')}")
+        print(f"\n[SUCCESS] 成功获取 {target_date} 的数据结构！")
+        print(f"[INFO] 数据来源: {result.get('source', 'unknown')}")
+        print(f"[INFO] 说明: {result.get('note', '无')}")
         
         if 'data' in result and 'rows' in result['data']:
-            print(f"📈 包含 {len(result['data']['rows'])} 个水表")
+            print(f"[DATA] 包含 {len(result['data']['rows'])} 个水表")
             
             # 显示每个水表的数据
             for row in result['data']['rows']:
                 name = row.get('Name', '未知水表')
                 value = row.get(target_date, '无数据')
-                print(f"💧 {name}: {value}")
+                print(f"[METER] {name}: {value}")
     else:
-        print(f"\n❌ 无法获取 {target_date} 的数据")
+        print(f"\n[ERROR] 无法获取 {target_date} 的数据")
     
     print("=" * 60)
 
