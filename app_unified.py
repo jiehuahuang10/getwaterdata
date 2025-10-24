@@ -58,9 +58,30 @@ def sync_excel_to_github(file_path, commit_message):
         subprocess.run(['git', 'config', 'user.email', 'render-bot@getwaterdata.com'], check=False)
         subprocess.run(['git', 'config', 'user.name', 'Render Auto Sync'], check=False)
         
-        # 配置 Git 使用 token 认证
+        # 配置 Git remote（先检查是否存在，不存在则添加）
         repo_url = f'https://{github_token}@github.com/jiehuahuang10/getwaterdata.git'
-        subprocess.run(['git', 'remote', 'set-url', 'origin', repo_url], check=False)
+        
+        # 检查 remote 是否存在
+        check_remote = subprocess.run(
+            ['git', 'remote', 'get-url', 'origin'],
+            capture_output=True,
+            text=True
+        )
+        
+        if check_remote.returncode != 0:
+            # remote 不存在，添加它
+            subprocess.run(['git', 'remote', 'add', 'origin', repo_url], check=False)
+        else:
+            # remote 存在，更新 URL
+            subprocess.run(['git', 'remote', 'set-url', 'origin', repo_url], check=False)
+        
+        # 拉取最新代码（避免冲突）
+        subprocess.run(
+            ['git', 'pull', 'origin', 'main', '--rebase'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
         
         # Git 操作
         subprocess.run(['git', 'add', file_path], check=True)
