@@ -36,8 +36,12 @@ def calculate_recent_7days():
 @app.route('/')
 def index():
     """首页 - 显示三个功能入口"""
-    # 强制返回主页模板
-    return render_template('index_unified.html'), 200, {'Cache-Control': 'no-cache, no-store, must-revalidate'}
+    # 强制返回主页模板，添加多层缓存控制
+    response = app.make_response(render_template('index_unified.html'))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 # ==================== 功能1：月度统计表添加 ====================
 
