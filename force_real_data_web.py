@@ -80,7 +80,7 @@ def get_from_existing_data_files(target_date):
                      glob.glob("REAL_*.json"))
         
         for filename in sorted(data_files, key=lambda x: os.path.getmtime(x), reverse=True):
-            print(f"  📂 检查文件: {filename}")
+            print(f"  [CHECK] 检查文件: {filename}")
             
             try:
                 with open(filename, 'r', encoding='utf-8') as f:
@@ -91,7 +91,7 @@ def get_from_existing_data_files(target_date):
                         if isinstance(row, dict) and target_date in row:
                             value = row[target_date]
                             if isinstance(value, (int, float)) and value > 0:
-                                print(f"  ✅ 在 {filename} 中找到 {target_date} 的真实数据！")
+                                print(f"  [FOUND] 在 {filename} 中找到 {target_date} 的真实数据！")
                                 return {
                                     'success': True,
                                     'data': data['data'],
