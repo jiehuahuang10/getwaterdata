@@ -127,7 +127,32 @@ def sync_excel_to_github(file_path, commit_message):
         
         # Git 操作
         print(f"[GITHUB SYNC] Adding file: {file_path}")
-        subprocess.run(['git', 'add', file_path], check=True)
+        
+        # 先检查文件状态
+        status_result = subprocess.run(
+            ['git', 'status', '--porcelain', file_path],
+            capture_output=True,
+            text=True
+        )
+        print(f"[GITHUB SYNC] Git status for file: {status_result.stdout.strip()}")
+        
+        # 强制添加文件
+        add_result = subprocess.run(
+            ['git', 'add', '-f', file_path],
+            capture_output=True,
+            text=True
+        )
+        print(f"[GITHUB SYNC] Add result: {add_result.returncode}")
+        if add_result.stderr:
+            print(f"[GITHUB SYNC] Add stderr: {add_result.stderr}")
+        
+        # 再次检查状态
+        status_result2 = subprocess.run(
+            ['git', 'status', '--porcelain', file_path],
+            capture_output=True,
+            text=True
+        )
+        print(f"[GITHUB SYNC] Git status after add: {status_result2.stdout.strip()}")
         
         print("[GITHUB SYNC] Committing changes...")
         result = subprocess.run(
