@@ -26,7 +26,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             padding: 40px;
-            max-width: 800px;
+            max-width: 1200px;
             width: 100%;
         }
 
@@ -48,9 +48,15 @@
 
         .features {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
             margin-top: 40px;
+        }
+
+        @media (max-width: 900px) {
+            .features {
+                grid-template-columns: 1fr;
+            }
         }
 
         .feature-card {
@@ -104,6 +110,15 @@
 
         .feature-card.secondary .feature-title,
         .feature-card.secondary .feature-desc {
+            color: white;
+        }
+
+        .feature-card.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .feature-card.success .feature-title,
+        .feature-card.success .feature-desc {
             color: white;
         }
 
@@ -182,6 +197,16 @@
                     实时数据采集<br>
                     历史数据查询<br>
                     数据导出功能
+                </div>
+            </a>
+
+            <a href="/auto_update" class="feature-card success">
+                <div class="feature-icon">🔄</div>
+                <div class="feature-title">自动更新Excel</div>
+                <div class="feature-desc">
+                    自动获取水务数据<br>
+                    直接写入Excel文件<br>
+                    支持指定日期更新
                 </div>
             </a>
         </div>

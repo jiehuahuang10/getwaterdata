@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动更新Excel - 水务数据管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #f8f9fa;
+            color: #333;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: #e9ecef;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            border-left: 4px solid #11998e;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #00695c;
+            margin-bottom: 10px;
+        }
+
+        .info-desc {
+            font-size: 14px;
+            color: #004d40;
+            line-height: 1.6;
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .input-group input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input[type="date"]:focus {
+            outline: none;
+            border-color: #11998e;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn.secondary:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .progress-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-button">← 返回首页</a>
+        
+        <div class="header">
+            <h1>🔄 自动更新Excel</h1>
+            <p class="subtitle">自动获取水务数据并更新到Excel文件</p>
+        </div>
+
+        <div class="info-box">
+            <div class="info-title">💡 功能说明</div>
+            <div class="info-desc">
+                此功能会自动从水务系统获取指定日期的8个水表数据，<br>
+                并直接写入到"石滩供水服务部每日总供水情况.xlsx"文件中。<br>
+                <strong>适用场景：</strong>补充缺失的历史数据或更新最新数据。
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <label for="targetDate">选择目标日期</label>
+                <input type="date" id="targetDate" />
+                <p class="help-text">选择要更新数据的日期（建议选择前一天或更早）</p>
+            </div>
+
+            <button class="btn" onclick="executeUpdate()" id="updateBtn">
+                🚀 执行更新
+            </button>
+
+            <button class="btn secondary" onclick="setYesterday()">
+                📅 快速选择昨天
+            </button>
+        </div>
+
+        <div class="progress-section" id="progressSection">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%">
+                    <span id="progressPercent">0%</span>
+                </div>
+            </div>
+            <div class="progress-text" id="progressText">准备中...</div>
+        </div>
+
+        <div class="message success" id="successMessage"></div>
+        <div class="message error" id="errorMessage"></div>
+        <div class="message info" id="infoMessage"></div>
+
+        <div class="footer">
+            <p>石滩供水服务部 © 2025</p>
+            <p>技术支持: Python + Flask</p>
+        </div>
+    </div>
+
+    <script>
+        // 设置默认日期为昨天
+        function setYesterday() {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            document.getElementById('targetDate').value = yesterday.toISOString().split('T')[0];
+        }
+
+        // 页面加载时设置默认日期
+        window.addEventListener('load', setYesterday);
+
+        // 执行更新
+        function executeUpdate() {
+            const targetDate = document.getElementById('targetDate').value;
+            
+            if (!targetDate) {
+                showError('请选择目标日期');
+                return;
+            }
+
+            // 隐藏所有消息
+            hideAllMessages();
+
+            // 禁用按钮
+            const updateBtn = document.getElementById('updateBtn');
+            updateBtn.disabled = true;
+            updateBtn.textContent = '🔄 更新中...';
+
+            // 显示进度
+            const progressSection = document.getElementById('progressSection');
+            progressSection.style.display = 'block';
+
+            // 模拟进度
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 5;
+                if (progress <= 90) {
+                    updateProgress(progress, '正在处理...');
+                }
+            }, 500);
+
+            // 发送请求
+            fetch('/execute_auto_update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ date: targetDate })
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+                updateProgress(100, '完成！');
+
+                setTimeout(() => {
+                    progressSection.style.display = 'none';
+                    updateBtn.disabled = false;
+                    updateBtn.textContent = '🚀 执行更新';
+
+                    if (data.success) {
+                        showSuccess(data.message || '数据更新成功！');
+                    } else {
+                        showError(data.message || '更新失败');
+                    }
+                }, 1000);
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                progressSection.style.display = 'none';
+                updateBtn.disabled = false;
+                updateBtn.textContent = '🚀 执行更新';
+                showError('网络错误: ' + error.message);
+            });
+        }
+
+        function updateProgress(percent, message) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressText').textContent = message;
+        }
+
+        function showSuccess(message) {
+            hideAllMessages();
+            const successMsg = document.getElementById('successMessage');
+            successMsg.textContent = message;
+            successMsg.style.display = 'block';
+        }
+
+        function showError(message) {
+            hideAllMessages();
+            const errorMsg = document.getElementById('errorMessage');
+            errorMsg.textContent = message;
+            errorMsg.style.display = 'block';
+        }
+
+        function showInfo(message) {
+            hideAllMessages();
+            const infoMsg = document.getElementById('infoMessage');
+            infoMsg.textContent = message;
+            infoMsg.style.display = 'block';
+        }
+
+        function hideAllMessages() {
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('infoMessage').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+

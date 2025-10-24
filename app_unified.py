@@ -45,6 +45,11 @@ def summary_page():
     """月度统计表页面"""
     return render_template('add_summary.html')
 
+@app.route('/auto_update')
+def auto_update_page():
+    """自动更新Excel数据页面"""
+    return render_template('auto_update.html')
+
 @app.route('/get_info')
 def get_info():
     """获取Excel文件信息"""
@@ -459,6 +464,37 @@ def get_available_dates():
 def update_excel_date():
     """按日期更新Excel（功能暂不可用）"""
     return jsonify({'success': False, 'message': 'Excel更新功能需要额外的依赖包'})
+
+# ==================== 功能3：自动更新Excel ====================
+
+@app.route('/execute_auto_update', methods=['POST'])
+def execute_auto_update():
+    """执行自动更新Excel任务"""
+    try:
+        data = request.get_json()
+        target_date = data.get('date')
+        
+        if not target_date:
+            return jsonify({'success': False, 'message': '请提供目标日期'})
+        
+        # 导入更新模块
+        from integrated_excel_updater import update_excel_with_real_data
+        
+        # 执行更新
+        result = update_excel_with_real_data(target_date)
+        
+        return jsonify(result)
+        
+    except ImportError as e:
+        return jsonify({
+            'success': False,
+            'message': f'缺少必要的模块: {str(e)}'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'更新失败: {str(e)}'
+        })
 
 # ==================== 启动应用 ====================
 
