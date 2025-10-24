@@ -4,6 +4,8 @@ on:
   schedule:
     # 每天下午6点执行 (UTC时间10:00 = 北京时间18:00)
     - cron: '0 10 * * *'
+    # 每天下午6:30备份执行（防止第一次失败）
+    - cron: '30 10 * * *'
     # 每周一上午9点保持活跃 (UTC时间1:00 = 北京时间9:00)
     - cron: '0 1 * * 1'
   workflow_dispatch: # 允许手动触发
@@ -39,10 +41,30 @@ jobs:
         echo "PASSWORD=${{ secrets.PASSWORD }}" >> config.env
         echo "REPORT_URL=${{ secrets.REPORT_URL }}" >> config.env
     
-    - name: 执行水务数据更新
+    - name: 执行水务数据更新（带重试机制）
       id: update_data
       run: |
-        python github_automation.py
+        MAX_RETRIES=3
+        RETRY_COUNT=0
+        SUCCESS=false
+        
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$SUCCESS" = "false" ]; do
+          echo "🔄 尝试执行（第 $((RETRY_COUNT + 1)) 次）..."
+          
+          if python github_automation.py; then
+            echo "✅ 执行成功！"
+            SUCCESS=true
+          else
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "❌ 执行失败，等待30秒后重试..."
+              sleep 30
+            else
+              echo "❌ 达到最大重试次数，执行失败"
+              exit 1
+            fi
+          fi
+        done
       env:
         TZ: Asia/Shanghai
         LOGIN_URL: ${{ secrets.LOGIN_URL }}
@@ -93,16 +115,59 @@ jobs:
         git commit -m "更新执行状态 - $(date +'%Y-%m-%d %H:%M:%S')" || true
         git push || true
     
+    - name: 验证Excel文件更新
+      if: steps.check_result.outputs.success == 'true'
+      run: |
+        EXCEL_FILE="excel_exports/石滩供水服务部每日总供水情况.xlsx"
+        
+        if [ -f "$EXCEL_FILE" ]; then
+          FILE_SIZE=$(stat -f%z "$EXCEL_FILE" 2>/dev/null || stat -c%s "$EXCEL_FILE" 2>/dev/null)
+          LAST_MODIFIED=$(stat -f%Sm "$EXCEL_FILE" 2>/dev/null || stat -c%y "$EXCEL_FILE" 2>/dev/null)
+          
+          echo "✅ Excel文件存在"
+          echo "📁 文件大小: $FILE_SIZE 字节"
+          echo "🕒 最后修改: $LAST_MODIFIED"
+          
+          # 检查文件大小是否合理（应该大于100KB）
+          if [ "$FILE_SIZE" -lt 100000 ]; then
+            echo "⚠️ 警告: Excel文件大小异常小，可能未正确更新"
+          fi
+        else
+          echo "❌ 错误: Excel文件不存在"
+          exit 1
+        fi
+    
     - name: 失败通知
       if: failure()
       run: |
+        echo "=================================="
         echo "❌ GitHub Actions执行失败"
-        echo "请检查日志: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        echo "=================================="
         echo "失败时间: $(date +'%Y-%m-%d %H:%M:%S')"
+        echo "失败原因: 请查看上面的日志详情"
+        echo "日志链接: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        echo ""
+        echo "📋 可能的原因:"
+        echo "  1. 网络连接问题"
+        echo "  2. 登录凭证过期"
+        echo "  3. 水务系统维护中"
+        echo "  4. Excel文件损坏"
+        echo ""
+        echo "🔧 建议操作:"
+        echo "  1. 检查GitHub Secrets配置"
+        echo "  2. 手动触发workflow_dispatch测试"
+        echo "  3. 查看kdocs-maintenance是否正常运行"
+        echo "=================================="
     
     - name: 成功通知
       if: success()
       run: |
+        echo "=================================="
         echo "✅ GitHub Actions执行成功"
+        echo "=================================="
         echo "执行时间: $(date +'%Y-%m-%d %H:%M:%S')"
-        echo "Excel文件已更新"
+        echo "更新日期: $(date -d yesterday +'%Y-%m-%d' 2>/dev/null || date -v-1d +'%Y-%m-%d' 2>/dev/null)"
+        echo "Excel文件已成功更新并推送到GitHub"
+        echo ""
+        echo "📊 下次执行时间: 明天下午6:00（北京时间）"
+        echo "=================================="
