@@ -143,12 +143,41 @@ def add_summary():
             sale_values=sale_values
         )
         
+        # 添加下载链接到返回结果
+        if result.get('success'):
+            result['download_url'] = '/download_excel/石滩区分区计量.xlsx'
+        
         return jsonify(result)
     except Exception as e:
         return jsonify({
             'success': False,
             'message': f'添加统计表失败: {str(e)}'
         })
+
+@app.route('/download_excel/<filename>')
+def download_excel(filename):
+    """下载 Excel 文件"""
+    try:
+        from flask import send_file
+        file_path = f'excel_exports/{filename}'
+        
+        if not os.path.exists(file_path):
+            return jsonify({
+                'success': False,
+                'message': f'文件不存在: {filename}'
+            }), 404
+        
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'下载失败: {str(e)}'
+        }), 500
 
 # ==================== 功能2：水务数据获取 ====================
 

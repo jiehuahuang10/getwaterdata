@@ -444,13 +444,23 @@
                 document.getElementById('loading').classList.remove('active');
                 
                 if (data.success) {
-                    showMessage(
+                    let successMsg = 
                         `✅ ${data.message}\n` +
                         `📌 ${data.base_info}\n` +
                         `📍 位置: 第${data.row_start}-${data.row_end}行\n` +
-                        `📊 共添加 ${data.total_rows} 行`,
-                        'success'
-                    );
+                        `📊 共添加 ${data.total_rows} 行`;
+                    
+                    // 如果有下载链接，添加下载按钮
+                    if (data.download_url) {
+                        successMsg += '\n\n💾 数据已保存到 Render 服务器';
+                    }
+                    
+                    showMessage(successMsg, 'success');
+                    
+                    // 显示下载按钮
+                    if (data.download_url) {
+                        showDownloadButton(data.download_url);
+                    }
                     
                     // 清空输入框
                     document.getElementById('sale1').value = '';
@@ -525,6 +535,42 @@
                     <div class="history-time">${item.time}</div>
                 </div>
             `).join('');
+        }
+        
+        // 显示下载按钮
+        function showDownloadButton(downloadUrl) {
+            // 检查是否已经有下载按钮区域
+            let downloadArea = document.getElementById('downloadArea');
+            
+            if (!downloadArea) {
+                // 创建下载区域
+                downloadArea = document.createElement('div');
+                downloadArea.id = 'downloadArea';
+                downloadArea.style.cssText = 'margin-top: 20px; text-align: center;';
+                
+                // 插入到消息框后面
+                const messageBox = document.getElementById('message');
+                messageBox.parentNode.insertBefore(downloadArea, messageBox.nextSibling);
+            }
+            
+            // 创建下载按钮HTML
+            downloadArea.innerHTML = `
+                <a href="${downloadUrl}" class="btn" style="
+                    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                    color: white;
+                    text-decoration: none;
+                    display: inline-block;
+                    margin-top: 10px;
+                    animation: pulse 2s ease-in-out infinite;
+                ">
+                    📥 下载更新后的Excel文件
+                </a>
+                <p style="color: #666; font-size: 12px; margin-top: 10px;">
+                    ⚠️ 请将下载的文件上传到 GitHub，以便下次部署时使用最新数据
+                </p>
+            `;
+            
+            downloadArea.style.display = 'block';
         }
     </script>
 </body>
