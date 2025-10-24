@@ -36,12 +36,25 @@ def calculate_recent_7days():
 @app.route('/')
 def index():
     """首页 - 显示三个功能入口"""
+    print("=" * 50)
+    print("ROOT ROUTE CALLED - RETURNING index_unified.html")
+    print("=" * 50)
     # 强制返回主页模板，添加多层缓存控制
     response = app.make_response(render_template('index_unified.html'))
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
+
+@app.route('/test')
+def test():
+    """测试路由 - 验证部署"""
+    return jsonify({
+        'status': 'ok',
+        'message': '新版本已部署！主页应该显示三个功能卡片。',
+        'version': '2.0',
+        'routes': ['/', '/summary', '/data', '/auto_update']
+    })
 
 # ==================== 功能1：月度统计表添加 ====================
 
