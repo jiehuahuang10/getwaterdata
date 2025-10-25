@@ -6,8 +6,8 @@
     <title>在线查看表格 - 石滩供水服务部每日总供水情况</title>
     
     <!-- AG-Grid CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-grid.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-theme-alpine.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/styles/ag-theme-alpine.css">
     
     <style>
         * {
@@ -350,7 +350,7 @@
     <a href="/" class="back-home" title="返回主页">🏠</a>
 
     <!-- AG-Grid JS -->
-    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/dist/ag-grid-community.min.js"></script>
     
     <script>
         let currentPage = 1;
@@ -496,13 +496,15 @@
                 suppressRowClickSelection: true,
                 onGridReady: function(params) {
                     gridApi = params.api;
+                    // 确保表头显示
+                    params.api.sizeColumnsToFit();
                 }
             };
 
             // 创建 Grid
             const eGridDiv = document.getElementById('myGrid');
             eGridDiv.innerHTML = '';
-            new agGrid.Grid(eGridDiv, gridOptions);
+            agGrid.createGrid(eGridDiv, gridOptions);
         }
 
         // 快速搜索
