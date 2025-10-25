@@ -509,7 +509,7 @@
                 data[0].forEach((cell, index) => {
                     // 如果单元格为空或只是空白，使用列号
                     let headerText = cell;
-                    if (!cell || cell.trim() === '') {
+                    if (!cell || (typeof cell === 'string' && cell.trim() === '')) {
                         headerText = `列${index + 1}`;
                     }
                     html += `<th>${headerText}</th>`;
