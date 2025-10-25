@@ -13,9 +13,17 @@
 
         body {
             font-family: 'Microsoft YaHei', Arial, sans-serif;
-            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
             min-height: 100vh;
             padding: 20px;
+            animation: gradientShift 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .container {
@@ -31,7 +39,8 @@
             text-align: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 3px solid #66bb6a;
+            border-bottom: 3px solid transparent;
+            border-image: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #4facfe) 1;
         }
 
         h1 {
@@ -94,13 +103,13 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 187, 106, 0.4);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
         }
 
         .btn-secondary {
@@ -147,7 +156,7 @@
             max-height: 70vh;
             /* 确保滚动条始终可见 */
             scrollbar-width: thin;
-            scrollbar-color: #66bb6a #f0f0f0;
+            scrollbar-color: #667eea #f0f0f0;
         }
 
         /* WebKit浏览器滚动条样式 */
@@ -162,12 +171,12 @@
         }
 
         .table-wrapper::-webkit-scrollbar-thumb {
-            background: #66bb6a;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 6px;
         }
 
         .table-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #43a047;
+            background: linear-gradient(135deg, #7c94ee 0%, #865bc0 100%);
         }
 
         table {
@@ -179,7 +188,7 @@
         }
 
         th {
-            background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 12px 10px;
             text-align: center;
@@ -194,14 +203,14 @@
             min-width: 80px;
             max-width: 150px;
             line-height: 1.4;
-            box-shadow: 0 2px 8px rgba(102, 187, 106, 0.3);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
             transition: all 0.3s ease;
         }
 
         th:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 187, 106, 0.5);
-            background: linear-gradient(135deg, #81c784 0%, #66bb6a 100%);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+            background: linear-gradient(135deg, #7c94ee 0%, #865bc0 100%);
         }
 
         th:first-child {
@@ -210,7 +219,7 @@
             z-index: 11;
             min-width: 140px;
             max-width: 140px;
-            background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             white-space: nowrap;
         }
 
@@ -229,16 +238,16 @@
         td:first-child {
             position: sticky;
             left: 0;
-            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #e8f5e9 100%);
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #ffeaa7 100%);
             background-size: 200% 100%;
             font-weight: 600;
             z-index: 9;
-            border-right: 2px solid #66bb6a;
+            border-right: 2px solid #fd79a8;
             text-align: center;
             padding: 12px 8px;
             min-width: 140px;
             max-width: 140px;
-            color: #2e7d32;
+            color: #d63031;
             animation: shimmer 3s infinite;
         }
 
@@ -248,15 +257,15 @@
         }
 
         tr:hover td {
-            background: linear-gradient(135deg, #f1f8e9 0%, #dcedc8 100%);
+            background: linear-gradient(135deg, #dfe6e9 0%, #b2bec3 100%);
             transform: scale(1.02);
-            box-shadow: 0 2px 8px rgba(102, 187, 106, 0.2);
-            color: #33691e;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+            color: #2d3436;
             font-weight: 500;
         }
 
         tr:hover td:first-child {
-            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #e8f5e9 100%);
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #ffeaa7 100%);
             background-size: 200% 100%;
             transform: scale(1.02);
         }
@@ -304,7 +313,7 @@
         }
 
         .page-btn:hover:not(:disabled) {
-            background: #66bb6a;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
 
@@ -314,7 +323,7 @@
         }
 
         .page-btn.active {
-            background: #66bb6a;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
 
