@@ -752,6 +752,60 @@ def execute_auto_update():
             'message': f'更新失败: {str(e)}'
         })
 
+# ==================== 功能4：在线查看Excel表格 ====================
+
+@app.route('/view_excel')
+def view_excel():
+    """显示Excel在线查看页面"""
+    return render_template('view_excel.html')
+
+@app.route('/api/get_excel_data')
+def get_excel_data():
+    """
+    获取Excel数据（只读模式）
+    返回整个Excel表格的数据，前端负责分页和搜索
+    """
+    try:
+        excel_path = DATA_SOURCE_PATH
+        
+        if not os.path.exists(excel_path):
+            return jsonify({
+                'success': False,
+                'message': f'Excel文件不存在: {excel_path}'
+            })
+        
+        # 读取Excel文件
+        wb = openpyxl.load_workbook(excel_path, read_only=True, data_only=True)
+        ws = wb.active
+        
+        # 获取所有数据
+        data = []
+        for row in ws.iter_rows(values_only=True):
+            # 将每行数据转换为列表，处理None值
+            row_data = [cell if cell is not None else '' for cell in row]
+            data.append(row_data)
+        
+        wb.close()
+        
+        # 获取文件修改时间
+        file_time = os.path.getmtime(excel_path)
+        last_update = datetime.fromtimestamp(file_time).strftime('%Y-%m-%d %H:%M:%S')
+        
+        return jsonify({
+            'success': True,
+            'data': data,
+            'total_rows': len(data),
+            'total_cols': len(data[0]) if data else 0,
+            'last_update': last_update,
+            'file_name': '石滩供水服务部每日总供水情况.xlsx'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'读取Excel失败: {str(e)}'
+        })
+
 # ==================== 启动应用 ====================
 
 if __name__ == '__main__':
