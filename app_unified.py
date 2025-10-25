@@ -769,6 +769,175 @@ def view_excel_grid():
     """显示Excel在线查看页面（AG-Grid专业版 - 推荐）"""
     return render_template('view_excel_aggrid.html')
 
+# ==================== 功能5：月报和季报统计 ====================
+
+@app.route('/monthly_report')
+def monthly_report():
+    """月报统计页面"""
+    return render_template('monthly_report.html')
+
+@app.route('/quarterly_report')
+def quarterly_report():
+    """季报统计页面"""
+    return render_template('quarterly_report.html')
+
+@app.route('/api/get_monthly_stats')
+def get_monthly_stats():
+    """获取月度统计数据"""
+    try:
+        year = request.args.get('year', str(datetime.now().year), type=str)
+        month = request.args.get('month', str(datetime.now().month), type=str)
+        
+        excel_path = DATA_SOURCE_PATH
+        if not os.path.exists(excel_path):
+            return jsonify({'success': False, 'message': 'Excel文件不存在'})
+        
+        wb = openpyxl.load_workbook(excel_path, read_only=True, data_only=True)
+        ws = wb.active
+        
+        # 读取表头（第4行）
+        all_rows = list(ws.iter_rows(values_only=True))
+        header = all_rows[3]
+        data_rows = all_rows[4:]
+        
+        # 筛选指定年月的数据
+        target_month = f"{year}年{int(month)}月"
+        monthly_data = []
+        
+        for row in data_rows:
+            date_val = row[0]
+            if date_val and target_month in str(date_val):
+                monthly_data.append(row)
+        
+        wb.close()
+        
+        if not monthly_data:
+            return jsonify({
+                'success': True,
+                'data': [],
+                'header': list(header),
+                'summary': {},
+                'message': f'未找到{year}年{month}月的数据'
+            })
+        
+        # 计算统计数据（对数值列求和、平均等）
+        summary = {}
+        for col_idx, col_name in enumerate(header):
+            if col_idx == 0:  # 跳过日期列
+                continue
+            
+            values = []
+            for row in monthly_data:
+                cell_value = row[col_idx]
+                if cell_value and isinstance(cell_value, (int, float)):
+                    values.append(cell_value)
+            
+            if values:
+                summary[col_name] = {
+                    'total': round(sum(values)),
+                    'average': round(sum(values) / len(values)),
+                    'max': round(max(values)),
+                    'min': round(min(values)),
+                    'count': len(values)
+                }
+        
+        return jsonify({
+            'success': True,
+            'data': monthly_data[:31],  # 最多31天
+            'header': list(header),
+            'summary': summary,
+            'year': year,
+            'month': month
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'获取月报数据失败: {str(e)}'})
+
+@app.route('/api/get_quarterly_stats')
+def get_quarterly_stats():
+    """获取季度统计数据"""
+    try:
+        year = request.args.get('year', str(datetime.now().year), type=str)
+        quarter = request.args.get('quarter', '1', type=str)
+        
+        # 计算季度包含的月份
+        quarter_months = {
+            '1': ['1', '2', '3'],
+            '2': ['4', '5', '6'],
+            '3': ['7', '8', '9'],
+            '4': ['10', '11', '12']
+        }
+        
+        months = quarter_months.get(quarter, ['1', '2', '3'])
+        
+        excel_path = DATA_SOURCE_PATH
+        if not os.path.exists(excel_path):
+            return jsonify({'success': False, 'message': 'Excel文件不存在'})
+        
+        wb = openpyxl.load_workbook(excel_path, read_only=True, data_only=True)
+        ws = wb.active
+        
+        # 读取表头和数据
+        all_rows = list(ws.iter_rows(values_only=True))
+        header = all_rows[3]
+        data_rows = all_rows[4:]
+        
+        # 筛选季度数据
+        quarterly_data = []
+        for row in data_rows:
+            date_val = row[0]
+            if date_val and year in str(date_val):
+                for month in months:
+                    target_month = f"{year}年{int(month)}月"
+                    if target_month in str(date_val):
+                        quarterly_data.append(row)
+                        break
+        
+        wb.close()
+        
+        if not quarterly_data:
+            return jsonify({
+                'success': True,
+                'data': [],
+                'header': list(header),
+                'summary': {},
+                'message': f'未找到{year}年第{quarter}季度的数据'
+            })
+        
+        # 计算季度统计
+        summary = {}
+        for col_idx, col_name in enumerate(header):
+            if col_idx == 0:
+                continue
+            
+            values = []
+            for row in quarterly_data:
+                cell_value = row[col_idx]
+                if cell_value and isinstance(cell_value, (int, float)):
+                    values.append(cell_value)
+            
+            if values:
+                summary[col_name] = {
+                    'total': round(sum(values)),
+                    'average': round(sum(values) / len(values)),
+                    'max': round(max(values)),
+                    'min': round(min(values)),
+                    'count': len(values)
+                }
+        
+        return jsonify({
+            'success': True,
+            'data': quarterly_data[:100],  # 最多100条
+            'header': list(header),
+            'summary': summary,
+            'year': year,
+            'quarter': quarter,
+            'months': months
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'获取季报数据失败: {str(e)}'})
+
 @app.route('/api/get_excel_data')
 def get_excel_data():
     """
