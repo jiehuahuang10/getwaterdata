@@ -39,7 +39,11 @@ class FeishuUploader:
         print("=" * 80)
         print("[飞书] 开始获取 tenant_access_token...")
         
-        url = f"{self.base_url}/auth/v3/tenant_access_token/internal/"
+        # 移除末尾的斜杠，尝试两种 API 地址
+        urls = [
+            f"{self.base_url}/auth/v3/tenant_access_token/internal",  # 标准地址
+            f"{self.base_url}/auth/v3/app_access_token/internal",     # 备用地址
+        ]
         
         payload = {
             "app_id": self.app_id,
@@ -50,25 +54,58 @@ class FeishuUploader:
             "Content-Type": "application/json; charset=utf-8"
         }
         
-        try:
-            response = requests.post(url, json=payload, headers=headers, timeout=10)
-            response.raise_for_status()
-            
-            result = response.json()
-            
-            if result.get('code') == 0:
-                self.tenant_access_token = result.get('tenant_access_token')
-                print(f"[飞书] ✅ 成功获取 access_token")
-                print(f"[飞书] Token 前10位: {self.tenant_access_token[:10]}...")
-                return self.tenant_access_token
-            else:
-                error_msg = result.get('msg', '未知错误')
-                print(f"[飞书] ❌ 获取 token 失败: {error_msg}")
-                return None
+        for idx, url in enumerate(urls, 1):
+            try:
+                print(f"[飞书] 尝试地址 {idx}: {url}")
+                print(f"[飞书] App ID: {self.app_id}")
+                print(f"[飞书] App Secret 前10位: {self.app_secret[:10]}...")
                 
-        except requests.RequestException as e:
-            print(f"[飞书] ❌ 请求失败: {str(e)}")
-            return None
+                response = requests.post(url, json=payload, headers=headers, timeout=10)
+                
+                print(f"[飞书] HTTP 状态码: {response.status_code}")
+                print(f"[飞书] 响应头: {dict(response.headers)}")
+                
+                # 先打印原始响应
+                try:
+                    result = response.json()
+                    print(f"[飞书] API 响应: {result}")
+                except Exception as json_err:
+                    print(f"[飞书] 响应不是JSON: {response.text[:200]}")
+                    continue
+                
+                # 检查是否成功
+                if response.status_code == 200 and result.get('code') == 0:
+                    self.tenant_access_token = result.get('tenant_access_token')
+                    print(f"[飞书] ✅ 成功获取 access_token")
+                    print(f"[飞书] Token 前10位: {self.tenant_access_token[:10]}...")
+                    return self.tenant_access_token
+                else:
+                    error_code = result.get('code', 'unknown')
+                    error_msg = result.get('msg', '未知错误')
+                    print(f"[飞书] ❌ API 返回错误码: {error_code}, 信息: {error_msg}")
+                    
+                    # 如果不是最后一个地址，继续尝试
+                    if idx < len(urls):
+                        print(f"[飞书] 尝试下一个地址...")
+                        continue
+                    else:
+                        return None
+                    
+            except requests.RequestException as e:
+                print(f"[飞书] ❌ 请求失败: {str(e)}")
+                print(f"[飞书] 错误类型: {type(e).__name__}")
+                
+                # 如果不是最后一个地址，继续尝试
+                if idx < len(urls):
+                    print(f"[飞书] 尝试下一个地址...")
+                    continue
+                else:
+                    return None
+            except Exception as e:
+                print(f"[飞书] ❌ 未知错误: {str(e)}")
+                return None
+        
+        return None
     
     def upload_file_to_feishu(self, file_path, folder_token, file_name=None):
         """
