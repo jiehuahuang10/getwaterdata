@@ -158,23 +158,29 @@
         th {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
-            padding: 12px 6px;
+            padding: 10px 8px;
             text-align: center;
             font-weight: 600;
             position: sticky;
             top: 0;
             z-index: 10;
-            white-space: nowrap;
-            font-size: 11px;
+            white-space: normal;
+            word-wrap: break-word;
+            font-size: 12px;
             border-right: 1px solid rgba(255,255,255,0.3);
+            min-width: 80px;
+            max-width: 150px;
+            line-height: 1.4;
         }
 
         th:first-child {
             position: sticky;
             left: 0;
             z-index: 11;
-            min-width: 150px;
+            min-width: 140px;
+            max-width: 140px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            white-space: nowrap;
         }
 
         td {
@@ -183,6 +189,8 @@
             border-bottom: 1px solid #e0e0e0;
             border-right: 1px solid #f0f0f0;
             white-space: nowrap;
+            font-size: 13px;
+            min-width: 80px;
         }
 
         td:first-child {
@@ -192,8 +200,10 @@
             font-weight: 600;
             z-index: 9;
             border-right: 2px solid #4facfe;
-            text-align: left;
-            padding-left: 15px;
+            text-align: center;
+            padding: 8px;
+            min-width: 140px;
+            max-width: 140px;
         }
 
         tr:hover {
