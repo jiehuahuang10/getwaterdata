@@ -808,6 +808,27 @@ def get_excel_data():
                 'message': 'Excel文件为空'
             })
         
+        # 修复表头：如果第一行的列名大部分是空的，使用自定义列名
+        if all_data and len(all_data) > 0:
+            header = all_data[0]
+            empty_count = sum(1 for cell in header if not cell or str(cell).strip() == '')
+            
+            # 如果超过一半的列名是空的，使用自定义列名
+            if empty_count > len(header) / 2:
+                custom_header = [
+                    '日期', '石滩供水服务部 日供水', '进水', '三江', '沙埔', '结新大塘', 
+                    '新塘大塘', '三江街总表', '边界过水用户（新侨）', '边界过水用户（增江口）', 
+                    '宁西总表', '沙庄总表', '如丰大围600拟表', '二围村6600拟表', '中山围', 
+                    '列2', '列3', '列4', '列5', '列6', '列7', '列8', '列9', '列10',
+                    '列11', '列12', '列13', '列14', '列15', '列16', '列17', '列18', '列19', '列20',
+                    '列21', '列22', '列23', '列24', '列25', '列26', '列27'
+                ]
+                # 确保自定义表头长度与实际列数匹配
+                while len(custom_header) < len(header):
+                    custom_header.append(f'列{len(custom_header) + 1}')
+                custom_header = custom_header[:len(header)]
+                all_data[0] = custom_header
+        
         # 按年份过滤（如果不是"全部"）
         if year_filter != 'all':
             header = all_data[0]
