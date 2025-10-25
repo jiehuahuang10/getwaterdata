@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>在线查看表格 - 石滩供水服务部每日总供水情况</title>
     
-    <!-- Handsontable CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@13.1.0/dist/handsontable.full.min.css">
+    <!-- AG-Grid CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-theme-alpine.css">
     
     <style>
         * {
@@ -142,9 +143,8 @@
             color: #4facfe;
         }
 
-        #spreadsheet {
+        #myGrid {
             height: 600px;
-            overflow: hidden;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
@@ -247,16 +247,23 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
 
-        /* Handsontable 自定义样式 */
-        .handsontable th {
+        /* AG-Grid 自定义样式 */
+        .ag-theme-alpine {
+            --ag-header-background-color: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --ag-header-foreground-color: white;
+            --ag-font-family: 'Microsoft YaHei', Arial, sans-serif;
+            --ag-font-size: 13px;
+        }
+
+        .ag-header-cell {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
             color: white !important;
             font-weight: 600 !important;
         }
 
-        .handsontable td:first-child {
-            background: #f8f9fa !important;
-            font-weight: 600;
+        .date-column {
+            background-color: #f8f9fa !important;
+            font-weight: 600 !important;
         }
 
         @media (max-width: 768px) {
@@ -277,7 +284,7 @@
                 width: 100%;
             }
 
-            #spreadsheet {
+            #myGrid {
                 height: 400px;
             }
         }
@@ -290,14 +297,13 @@
                 <span>📊</span>
                 <span>石滩供水服务部每日总供水情况</span>
             </h1>
-            <p class="subtitle">📌 只读模式 - 数据仅供查看 | 📈 Excel 样式表格</p>
-            <p class="subtitle">💡 数据来源：excel_exports/石滩供水服务部每日总供水情况.xlsx</p>
+            <p class="subtitle">📌 只读模式 - 数据仅供查看 | 🚀 AG-Grid 专业版</p>
+            <p class="subtitle">💡 支持排序、筛选、导出、复制等功能</p>
         </div>
 
         <div class="controls">
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="🔍 搜索日期、水表名称或数据..." onkeypress="handleSearchKeyPress(event)">
-                <button class="btn btn-primary" onclick="performSearch()">搜索</button>
+                <input type="text" id="searchInput" placeholder="🔍 搜索日期、水表名称或数据..." onkeyup="onQuickFilterChanged()">
                 <button class="btn btn-secondary" onclick="clearSearch()">清除</button>
             </div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -336,15 +342,15 @@
             </div>
         </div>
 
-        <div id="spreadsheet"></div>
+        <div id="myGrid" class="ag-theme-alpine"></div>
 
         <div id="paginationContainer"></div>
     </div>
 
     <a href="/" class="back-home" title="返回主页">🏠</a>
 
-    <!-- Handsontable JS -->
-    <script src="https://cdn.jsdelivr.net/npm/handsontable@13.1.0/dist/handsontable.full.min.js"></script>
+    <!-- AG-Grid JS -->
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
     
     <script>
         let currentPage = 1;
@@ -353,7 +359,7 @@
         let totalRows = 0;
         let searchText = '';
         let yearFilter = '2025';
-        let hot = null;  // Handsontable 实例
+        let gridApi = null;
 
         // 页面加载时获取数据
         window.onload = function() {
@@ -366,7 +372,6 @@
             
             const str = String(dateStr).trim();
             
-            // 匹配 "Wed, 01 Jan 2025 00:00:00 GMT" 格式
             const gmtMatch = str.match(/\w+,\s+(\d+)\s+(\w+)\s+(\d{4})/);
             if (gmtMatch) {
                 const day = gmtMatch[1];
@@ -379,7 +384,6 @@
                 return `${year}年${month}月${day}日`;
             }
             
-            // 匹配 "2025-01-01" 格式
             const isoMatch = str.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
             if (isoMatch) {
                 return `${isoMatch[1]}年${parseInt(isoMatch[2])}月${parseInt(isoMatch[3])}日`;
@@ -420,7 +424,7 @@
                     document.getElementById('lastUpdate').textContent = result.last_update;
                     document.getElementById('currentPageInfo').textContent = `${currentPage} / ${totalPages}`;
                     
-                    displaySpreadsheet(result.data);
+                    displayGrid(result.data);
                     updatePagination();
                 } else {
                     showError(result.message);
@@ -430,63 +434,93 @@
             }
         }
 
-        // 显示表格（使用 Handsontable）
-        function displaySpreadsheet(data) {
+        // 显示表格（使用 AG-Grid）
+        function displayGrid(data) {
             if (data.length === 0) {
-                document.getElementById('spreadsheet').innerHTML = '<div style="text-align:center;padding:50px;color:#999;">📭 暂无数据</div>';
+                document.getElementById('myGrid').innerHTML = '<div style="text-align:center;padding:50px;color:#999;">📭 暂无数据</div>';
                 return;
             }
 
-            // 提取表头和数据
             const headers = data[0];
             const rows = data.slice(1);
-            
-            // 格式化数据
-            const formattedData = rows.map(row => {
-                return row.map((cell, colIndex) => {
-                    if (colIndex === 0) {
-                        return formatDateToChinese(cell);
+
+            // 创建列定义
+            const columnDefs = headers.map((header, index) => {
+                const colDef = {
+                    headerName: header,
+                    field: `col${index}`,
+                    sortable: true,
+                    filter: true,
+                    resizable: true,
+                    cellClass: index === 0 ? 'date-column' : '',
+                    minWidth: index === 0 ? 150 : 100
+                };
+
+                // 第一列固定
+                if (index === 0) {
+                    colDef.pinned = 'left';
+                    colDef.lockPosition = true;
+                }
+
+                return colDef;
+            });
+
+            // 格式化行数据
+            const rowData = rows.map(row => {
+                const rowObj = {};
+                row.forEach((cell, index) => {
+                    if (index === 0) {
+                        rowObj[`col${index}`] = formatDateToChinese(cell);
+                    } else {
+                        rowObj[`col${index}`] = cell === null || cell === undefined || cell === '' ? '-' : cell;
                     }
-                    return cell === null || cell === undefined || cell === '' ? '-' : cell;
                 });
+                return rowObj;
             });
 
-            const container = document.getElementById('spreadsheet');
-            
-            // 如果已存在实例，先销毁
-            if (hot) {
-                hot.destroy();
+            // Grid 配置
+            const gridOptions = {
+                columnDefs: columnDefs,
+                rowData: rowData,
+                defaultColDef: {
+                    flex: 1,
+                    minWidth: 100,
+                    sortable: true,
+                    filter: true,
+                    resizable: true
+                },
+                enableCellTextSelection: true,
+                ensureDomOrder: true,
+                animateRows: true,
+                rowSelection: 'multiple',
+                suppressRowClickSelection: true,
+                onGridReady: function(params) {
+                    gridApi = params.api;
+                }
+            };
+
+            // 创建 Grid
+            const eGridDiv = document.getElementById('myGrid');
+            eGridDiv.innerHTML = '';
+            new agGrid.Grid(eGridDiv, gridOptions);
+        }
+
+        // 快速搜索
+        function onQuickFilterChanged() {
+            if (gridApi) {
+                const value = document.getElementById('searchInput').value;
+                gridApi.setQuickFilter(value);
             }
-
-            // 创建 Handsontable 实例
-            hot = new Handsontable(container, {
-                data: formattedData,
-                colHeaders: headers,  // 明确使用表头数组
-                rowHeaders: true,
-                width: '100%',
-                height: 600,
-                licenseKey: 'non-commercial-and-evaluation',
-                readOnly: true,
-                stretchH: 'all',
-                columnSorting: true,
-                fixedColumnsStart: 1,  // 固定第一列（日期列）
-                contextMenu: ['copy'],
-                manualColumnResize: true,
-                manualRowResize: false,
-                className: 'htCenter htMiddle'
-            });
         }
 
         // 更新分页
         function updatePagination() {
             let paginationHtml = '<div class="pagination">';
             
-            // 上一页按钮
             paginationHtml += `<button class="page-btn" onclick="loadData(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
                 ◀ 上一页
             </button>`;
 
-            // 页码按钮
             const maxButtons = 5;
             let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
             let endPage = Math.min(totalPages, startPage + maxButtons - 1);
@@ -515,7 +549,6 @@
                 paginationHtml += `<button class="page-btn" onclick="loadData(${totalPages})">${totalPages}</button>`;
             }
 
-            // 下一页按钮
             paginationHtml += `<button class="page-btn" onclick="loadData(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
                 下一页 ▶
             </button>`;
@@ -524,48 +557,29 @@
             document.getElementById('paginationContainer').innerHTML = paginationHtml;
         }
 
-        // 改变年份
         function changeYear() {
-            const select = document.getElementById('yearFilter');
-            yearFilter = select.value;
+            yearFilter = document.getElementById('yearFilter').value;
             loadData(1);
         }
 
-        // 改变每页行数
         function changeRowsPerPage() {
-            const select = document.getElementById('rowsPerPage');
-            rowsPerPage = parseInt(select.value);
+            rowsPerPage = parseInt(document.getElementById('rowsPerPage').value);
             loadData(1);
         }
 
-        // 执行搜索
-        function performSearch() {
-            searchText = document.getElementById('searchInput').value.trim();
-            loadData(1);
-        }
-
-        // 清除搜索
         function clearSearch() {
             document.getElementById('searchInput').value = '';
-            searchText = '';
-            loadData(1);
-        }
-
-        // 回车键搜索
-        function handleSearchKeyPress(event) {
-            if (event.key === 'Enter') {
-                performSearch();
+            if (gridApi) {
+                gridApi.setQuickFilter('');
             }
         }
 
-        // 刷新数据
         function refreshData() {
             loadData(currentPage);
         }
 
-        // 显示加载中
         function showLoading() {
-            document.getElementById('spreadsheet').innerHTML = `
+            document.getElementById('myGrid').innerHTML = `
                 <div class="loading">
                     <div class="loading-spinner"></div>
                     <div>正在加载数据...</div>
@@ -573,9 +587,8 @@
             `;
         }
 
-        // 显示错误
         function showError(message) {
-            document.getElementById('spreadsheet').innerHTML = `
+            document.getElementById('myGrid').innerHTML = `
                 <div class="error">
                     <strong>❌ 错误</strong><br>
                     ${message}

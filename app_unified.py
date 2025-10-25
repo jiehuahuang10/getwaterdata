@@ -764,6 +764,11 @@ def view_excel_pro():
     """显示Excel在线查看页面（Handsontable专业版）"""
     return render_template('view_excel_handsontable.html')
 
+@app.route('/view_excel_grid')
+def view_excel_grid():
+    """显示Excel在线查看页面（AG-Grid专业版 - 推荐）"""
+    return render_template('view_excel_aggrid.html')
+
 @app.route('/api/get_excel_data')
 def get_excel_data():
     """
