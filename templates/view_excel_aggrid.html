@@ -441,19 +441,23 @@
                 return;
             }
 
+            console.log('原始数据:', data);
+            console.log('数据行数:', data.length);
+            console.log('表头:', data[0]);
+
             const headers = data[0];
             const rows = data.slice(1);
 
             // 创建列定义
             const columnDefs = headers.map((header, index) => {
                 const colDef = {
-                    headerName: header,
+                    headerName: String(header || ''),  // 确保是字符串
                     field: `col${index}`,
                     sortable: true,
                     filter: true,
                     resizable: true,
-                    cellClass: index === 0 ? 'date-column' : '',
-                    minWidth: index === 0 ? 150 : 100
+                    width: index === 0 ? 150 : 120,
+                    cellClass: index === 0 ? 'date-column' : ''
                 };
 
                 // 第一列固定
@@ -465,6 +469,8 @@
                 return colDef;
             });
 
+            console.log('列定义:', columnDefs);
+
             // 格式化行数据
             const rowData = rows.map(row => {
                 const rowObj = {};
@@ -472,39 +478,43 @@
                     if (index === 0) {
                         rowObj[`col${index}`] = formatDateToChinese(cell);
                     } else {
-                        rowObj[`col${index}`] = cell === null || cell === undefined || cell === '' ? '-' : cell;
+                        rowObj[`col${index}`] = cell === null || cell === undefined || cell === '' ? '-' : String(cell);
                     }
                 });
                 return rowObj;
             });
+
+            console.log('行数据示例:', rowData[0]);
+
+            // 清空容器
+            const eGridDiv = document.getElementById('myGrid');
+            eGridDiv.innerHTML = '';
 
             // Grid 配置
             const gridOptions = {
                 columnDefs: columnDefs,
                 rowData: rowData,
                 defaultColDef: {
-                    flex: 1,
-                    minWidth: 100,
                     sortable: true,
                     filter: true,
-                    resizable: true
+                    resizable: true,
+                    minWidth: 80
                 },
+                headerHeight: 40,  // 设置表头高度
                 enableCellTextSelection: true,
-                ensureDomOrder: true,
                 animateRows: true,
                 rowSelection: 'multiple',
                 suppressRowClickSelection: true,
                 onGridReady: function(params) {
+                    console.log('Grid ready!');
                     gridApi = params.api;
-                    // 确保表头显示
-                    params.api.sizeColumnsToFit();
                 }
             };
 
-            // 创建 Grid
-            const eGridDiv = document.getElementById('myGrid');
-            eGridDiv.innerHTML = '';
-            agGrid.createGrid(eGridDiv, gridOptions);
+            console.log('开始创建Grid...');
+            // 创建 Grid（使用旧版 API）
+            new agGrid.Grid(eGridDiv, gridOptions);
+            console.log('Grid创建完成');
         }
 
         // 快速搜索
