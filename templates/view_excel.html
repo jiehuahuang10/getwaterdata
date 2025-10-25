@@ -179,9 +179,9 @@
         }
 
         th {
-            background: linear-gradient(135deg, #5f9ea0 0%, #4682b4 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 10px 8px;
+            padding: 12px 10px;
             text-align: center;
             font-weight: 600;
             position: sticky;
@@ -189,11 +189,18 @@
             z-index: 10;
             white-space: normal;
             word-wrap: break-word;
-            font-size: 12px;
-            border-right: 1px solid rgba(255,255,255,0.3);
+            font-size: 13px;
+            border-right: 1px solid rgba(255,255,255,0.2);
             min-width: 80px;
             max-width: 150px;
             line-height: 1.4;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        th:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
         }
 
         th:first-child {
@@ -202,35 +209,77 @@
             z-index: 11;
             min-width: 140px;
             max-width: 140px;
-            background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             white-space: nowrap;
         }
 
         td {
-            padding: 8px 6px;
+            padding: 12px 8px;
             text-align: center;
-            border-bottom: 1px solid #e0e0e0;
-            border-right: 1px solid #f0f0f0;
+            border-bottom: 1px solid #e8e8e8;
+            border-right: 1px solid #f5f5f5;
             white-space: nowrap;
             font-size: 13px;
             min-width: 80px;
+            transition: all 0.3s ease;
+            position: relative;
         }
 
         td:first-child {
             position: sticky;
             left: 0;
-            background: #f8f9fa;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ffecd2 100%);
+            background-size: 200% 100%;
             font-weight: 600;
             z-index: 9;
-            border-right: 2px solid #4facfe;
+            border-right: 2px solid #f5576c;
             text-align: center;
-            padding: 8px;
+            padding: 12px 8px;
             min-width: 140px;
             max-width: 140px;
+            color: #333;
+            animation: shimmer 3s infinite;
         }
 
-        tr:hover {
-            background: #f8f9fa;
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        tr:hover td {
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+            color: #333;
+            font-weight: 500;
+        }
+
+        tr:hover td:first-child {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ffecd2 100%);
+            background-size: 200% 100%;
+            transform: scale(1.02);
+        }
+
+        tbody tr {
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        tbody tr:nth-child(1) { animation-delay: 0.05s; }
+        tbody tr:nth-child(2) { animation-delay: 0.1s; }
+        tbody tr:nth-child(3) { animation-delay: 0.15s; }
+        tbody tr:nth-child(4) { animation-delay: 0.2s; }
+        tbody tr:nth-child(5) { animation-delay: 0.25s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .pagination {
@@ -337,6 +386,105 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
 
+        /* 云朵动画 */
+        .cloud {
+            position: fixed;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 100px;
+            opacity: 0.5;
+            z-index: 0;
+        }
+
+        .cloud:before, .cloud:after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 100px;
+        }
+
+        .cloud-1 {
+            width: 100px;
+            height: 40px;
+            top: 10%;
+            left: -100px;
+            animation: drift1 30s infinite linear;
+        }
+
+        .cloud-1:before {
+            width: 50px;
+            height: 50px;
+            top: -25px;
+            left: 10px;
+        }
+
+        .cloud-1:after {
+            width: 60px;
+            height: 40px;
+            top: -15px;
+            right: 10px;
+        }
+
+        .cloud-2 {
+            width: 120px;
+            height: 50px;
+            top: 30%;
+            right: -120px;
+            animation: drift2 40s infinite linear;
+            animation-delay: 5s;
+        }
+
+        .cloud-2:before {
+            width: 60px;
+            height: 60px;
+            top: -30px;
+            left: 15px;
+        }
+
+        .cloud-2:after {
+            width: 70px;
+            height: 50px;
+            top: -20px;
+            right: 15px;
+        }
+
+        .cloud-3 {
+            width: 80px;
+            height: 35px;
+            top: 60%;
+            left: -80px;
+            animation: drift3 35s infinite linear;
+            animation-delay: 10s;
+        }
+
+        .cloud-3:before {
+            width: 45px;
+            height: 45px;
+            top: -20px;
+            left: 8px;
+        }
+
+        .cloud-3:after {
+            width: 55px;
+            height: 35px;
+            top: -12px;
+            right: 8px;
+        }
+
+        @keyframes drift1 {
+            0% { left: -100px; }
+            100% { left: 110%; }
+        }
+
+        @keyframes drift2 {
+            0% { right: -120px; }
+            100% { right: 110%; }
+        }
+
+        @keyframes drift3 {
+            0% { left: -80px; }
+            100% { left: 110%; }
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -366,6 +514,11 @@
     </style>
 </head>
 <body>
+    <!-- 云朵装饰 -->
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+    
     <div class="container">
         <div class="header">
             <h1>
