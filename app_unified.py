@@ -763,7 +763,7 @@ def view_excel():
 def get_excel_data():
     """
     获取Excel数据（只读模式）
-    支持分页加载，避免一次性传输过大数据
+    默认只显示当前年份的数据，支持分页和搜索
     """
     try:
         excel_path = DATA_SOURCE_PATH
@@ -774,10 +774,11 @@ def get_excel_data():
                 'message': f'Excel文件不存在: {excel_path}'
             })
         
-        # 获取分页参数
+        # 获取参数
         page = request.args.get('page', 1, type=int)
-        page_size = request.args.get('page_size', 200, type=int)  # 默认每页200行
+        page_size = request.args.get('page_size', 200, type=int)
         search_text = request.args.get('search', '', type=str)
+        year_filter = request.args.get('year', str(datetime.now().year), type=str)  # 默认当前年份
         
         # 读取Excel文件
         wb = openpyxl.load_workbook(excel_path, read_only=True, data_only=True)
@@ -791,15 +792,34 @@ def get_excel_data():
         
         wb.close()
         
-        # 如果有搜索条件，过滤数据
+        if len(all_data) == 0:
+            return jsonify({
+                'success': False,
+                'message': 'Excel文件为空'
+            })
+        
+        # 按年份过滤（如果不是"全部"）
+        if year_filter != 'all':
+            header = all_data[0]
+            filtered_by_year = [header]  # 保留表头
+            
+            for row in all_data[1:]:
+                # 检查第一列（日期列）是否包含指定年份
+                date_str = str(row[0]) if row and row[0] else ''
+                if year_filter in date_str:
+                    filtered_by_year.append(row)
+        else:
+            filtered_by_year = all_data
+        
+        # 如果有搜索条件，进一步过滤
         if search_text:
             search_lower = search_text.lower()
-            filtered_data = [all_data[0]]  # 保留表头
-            for row in all_data[1:]:
+            filtered_data = [filtered_by_year[0]]  # 保留表头
+            for row in filtered_by_year[1:]:
                 if any(search_lower in str(cell).lower() for cell in row):
                     filtered_data.append(row)
         else:
-            filtered_data = all_data
+            filtered_data = filtered_by_year
         
         # 计算分页
         total_rows = len(filtered_data)

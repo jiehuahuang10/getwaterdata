@@ -326,13 +326,20 @@
                 <button class="btn btn-primary" onclick="performSearch()">搜索</button>
                 <button class="btn btn-secondary" onclick="clearSearch()">清除</button>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-secondary" onclick="refreshData()">🔄 刷新</button>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <select id="yearFilter" class="btn btn-secondary" onchange="changeYear()" style="padding: 10px;">
+                    <option value="2025" selected>📅 2025年</option>
+                    <option value="2024">📅 2024年</option>
+                    <option value="2023">📅 2023年</option>
+                    <option value="2022">📅 2022年</option>
+                    <option value="all">📅 全部年份</option>
+                </select>
                 <select id="rowsPerPage" class="btn btn-secondary" onchange="changeRowsPerPage()" style="padding: 10px;">
                     <option value="100">每页 100 行</option>
                     <option value="200" selected>每页 200 行</option>
                     <option value="500">每页 500 行</option>
                 </select>
+                <button class="btn btn-secondary" onclick="refreshData()">🔄 刷新</button>
             </div>
         </div>
 
@@ -373,6 +380,7 @@
         let totalPages = 1;
         let totalRows = 0;
         let searchText = '';
+        let yearFilter = '2025';  // 默认显示2025年
 
         // 页面加载时获取数据
         window.onload = function() {
@@ -386,7 +394,8 @@
                 
                 const params = new URLSearchParams({
                     page: page,
-                    page_size: rowsPerPage
+                    page_size: rowsPerPage,
+                    year: yearFilter
                 });
                 
                 if (searchText) {
@@ -494,6 +503,13 @@
 
             paginationHtml += '</div>';
             document.getElementById('paginationContainer').innerHTML = paginationHtml;
+        }
+
+        // 改变年份
+        function changeYear() {
+            const select = document.getElementById('yearFilter');
+            yearFilter = select.value;
+            loadData(1);  // 重新加载第一页
         }
 
         // 改变每页行数
