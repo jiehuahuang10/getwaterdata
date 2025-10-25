@@ -84,18 +84,21 @@ jobs:
           echo "success=false" >> $GITHUB_OUTPUT
         fi
     
-    - name: 同步到飞书云空间
-      if: steps.check_result.outputs.success == 'true'
-      run: |
-        echo "=================================="
-        echo "📤 开始同步文件到飞书云空间..."
-        echo "=================================="
-        python feishu_sync.py
-      env:
-        FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
-        FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
-        FEISHU_FOLDER_TOKEN: ${{ secrets.FEISHU_FOLDER_TOKEN }}
-      continue-on-error: true
+    # 飞书同步功能已暂时禁用
+    # 原因：GitHub Actions 服务器在海外，无法访问飞书 API
+    # 如需启用，请在国内服务器环境运行
+    # - name: 同步到飞书云空间
+    #   if: steps.check_result.outputs.success == 'true'
+    #   run: |
+    #     echo "=================================="
+    #     echo "📤 开始同步文件到飞书云空间..."
+    #     echo "=================================="
+    #     python feishu_sync.py
+    #   env:
+    #     FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+    #     FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+    #     FEISHU_FOLDER_TOKEN: ${{ secrets.FEISHU_FOLDER_TOKEN }}
+    #   continue-on-error: true
     
     - name: 提交更新的Excel文件
       if: steps.check_result.outputs.success == 'true'
@@ -182,8 +185,7 @@ jobs:
         echo "更新日期: $(date -d yesterday +'%Y-%m-%d' 2>/dev/null || date -v-1d +'%Y-%m-%d' 2>/dev/null)"
         echo ""
         echo "✅ Excel文件已成功更新并推送到GitHub"
-        echo "✅ 文件已同步到飞书云空间"
         echo ""
         echo "📊 下次执行时间: 明天下午6:00（北京时间）"
-        echo "🔗 飞书查看: 打开飞书 → 云文档 → 石滩供水数据"
+        echo "🔗 GitHub查看: https://github.com/jiehuahuang10/getwaterdata"
         echo "=================================="
