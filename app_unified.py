@@ -847,13 +847,21 @@ def get_excel_data():
         else:
             filtered_data = filtered_by_year
         
-        # 计算分页
-        total_rows = len(filtered_data)
-        total_pages = (total_rows + page_size - 1) // page_size
-        start_idx = (page - 1) * page_size
-        end_idx = min(start_idx + page_size, total_rows)
+        # 分离表头和数据行
+        header = filtered_data[0]
+        data_rows_only = filtered_data[1:]
         
-        page_data = filtered_data[start_idx:end_idx]
+        # 计算分页（只对数据行分页）
+        total_data_rows = len(data_rows_only)
+        total_pages = (total_data_rows + page_size - 1) // page_size if total_data_rows > 0 else 1
+        start_idx = (page - 1) * page_size
+        end_idx = min(start_idx + page_size, total_data_rows)
+        
+        # 获取当前页的数据行
+        current_page_rows = data_rows_only[start_idx:end_idx]
+        
+        # 每页都返回：表头 + 当前页数据
+        page_data = [header] + current_page_rows
         
         # 获取文件修改时间
         file_time = os.path.getmtime(excel_path)
@@ -862,8 +870,8 @@ def get_excel_data():
         return jsonify({
             'success': True,
             'data': page_data,
-            'total_rows': total_rows,
-            'total_cols': len(all_data[0]) if all_data else 0,
+            'total_rows': total_data_rows,  # 只计算数据行数，不含表头
+            'total_cols': len(header) if header else 0,
             'current_page': page,
             'page_size': page_size,
             'total_pages': total_pages,
