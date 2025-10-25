@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线查看表格 - 石滩供水服务部每日总供水情况</title>
+    
+    <!-- Handsontable CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@13.1.0/dist/handsontable.full.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #4facfe;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: #4facfe;
+        }
+
+        #spreadsheet {
+            height: 600px;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .page-btn {
+            padding: 8px 15px;
+            border: 2px solid #4facfe;
+            background: white;
+            color: #4facfe;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: #4facfe;
+            color: white;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .page-btn.active {
+            background: #4facfe;
+            color: white;
+        }
+
+        .page-info {
+            color: #666;
+            font-size: 14px;
+            padding: 0 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fff5f5;
+            color: #c53030;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #c53030;
+            margin: 20px 0;
+        }
+
+        .back-home {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            text-decoration: none;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .back-home:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Handsontable 自定义样式 */
+        .handsontable th {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+            color: white !important;
+            font-weight: 600 !important;
+        }
+
+        .handsontable td:first-child {
+            background: #f8f9fa !important;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            #spreadsheet {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span>📊</span>
+                <span>石滩供水服务部每日总供水情况</span>
+            </h1>
+            <p class="subtitle">📌 只读模式 - 数据仅供查看 | 📈 Excel 样式表格</p>
+            <p class="subtitle">💡 数据来源：excel_exports/石滩供水服务部每日总供水情况.xlsx</p>
+        </div>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 搜索日期、水表名称或数据..." onkeypress="handleSearchKeyPress(event)">
+                <button class="btn btn-primary" onclick="performSearch()">搜索</button>
+                <button class="btn btn-secondary" onclick="clearSearch()">清除</button>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <select id="yearFilter" class="btn btn-secondary" onchange="changeYear()" style="padding: 10px;">
+                    <option value="2025" selected>📅 2025年</option>
+                    <option value="2024">📅 2024年</option>
+                    <option value="2023">📅 2023年</option>
+                    <option value="2022">📅 2022年</option>
+                    <option value="all">📅 全部年份</option>
+                </select>
+                <select id="rowsPerPage" class="btn btn-secondary" onchange="changeRowsPerPage()" style="padding: 10px;">
+                    <option value="100">每页 100 行</option>
+                    <option value="200" selected>每页 200 行</option>
+                    <option value="500">每页 500 行</option>
+                </select>
+                <button class="btn btn-secondary" onclick="refreshData()">🔄 刷新</button>
+            </div>
+        </div>
+
+        <div class="info-bar">
+            <div class="info-item">
+                <span>📊 总行数:</span>
+                <span class="info-value" id="totalRows">-</span>
+            </div>
+            <div class="info-item">
+                <span>📋 总列数:</span>
+                <span class="info-value" id="totalCols">-</span>
+            </div>
+            <div class="info-item">
+                <span>📅 当前页:</span>
+                <span class="info-value" id="currentPageInfo">-</span>
+            </div>
+            <div class="info-item">
+                <span>🕒 最后更新:</span>
+                <span class="info-value" id="lastUpdate">-</span>
+            </div>
+        </div>
+
+        <div id="spreadsheet"></div>
+
+        <div id="paginationContainer"></div>
+    </div>
+
+    <a href="/" class="back-home" title="返回主页">🏠</a>
+
+    <!-- Handsontable JS -->
+    <script src="https://cdn.jsdelivr.net/npm/handsontable@13.1.0/dist/handsontable.full.min.js"></script>
+    
+    <script>
+        let currentPage = 1;
+        let rowsPerPage = 200;
+        let totalPages = 1;
+        let totalRows = 0;
+        let searchText = '';
+        let yearFilter = '2025';
+        let hot = null;  // Handsontable 实例
+
+        // 页面加载时获取数据
+        window.onload = function() {
+            loadData(1);
+        };
+
+        // 格式化日期为中文格式
+        function formatDateToChinese(dateStr) {
+            if (!dateStr || dateStr === '-' || dateStr === '') return '-';
+            
+            const str = String(dateStr).trim();
+            
+            // 匹配 "Wed, 01 Jan 2025 00:00:00 GMT" 格式
+            const gmtMatch = str.match(/\w+,\s+(\d+)\s+(\w+)\s+(\d{4})/);
+            if (gmtMatch) {
+                const day = gmtMatch[1];
+                const monthMap = {
+                    'Jan': '1', 'Feb': '2', 'Mar': '3', 'Apr': '4', 'May': '5', 'Jun': '6',
+                    'Jul': '7', 'Aug': '8', 'Sep': '9', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+                };
+                const month = monthMap[gmtMatch[2]];
+                const year = gmtMatch[3];
+                return `${year}年${month}月${day}日`;
+            }
+            
+            // 匹配 "2025-01-01" 格式
+            const isoMatch = str.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+            if (isoMatch) {
+                return `${isoMatch[1]}年${parseInt(isoMatch[2])}月${parseInt(isoMatch[3])}日`;
+            }
+            
+            if (str.includes('年') && str.includes('月')) {
+                return str;
+            }
+            
+            return str;
+        }
+
+        // 加载数据
+        async function loadData(page) {
+            try {
+                showLoading();
+                
+                const params = new URLSearchParams({
+                    page: page,
+                    page_size: rowsPerPage,
+                    year: yearFilter
+                });
+                
+                if (searchText) {
+                    params.append('search', searchText);
+                }
+                
+                const response = await fetch(`/api/get_excel_data?${params}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    currentPage = result.current_page;
+                    totalPages = result.total_pages;
+                    totalRows = result.total_rows;
+                    
+                    document.getElementById('totalRows').textContent = result.total_rows.toLocaleString();
+                    document.getElementById('totalCols').textContent = result.total_cols;
+                    document.getElementById('lastUpdate').textContent = result.last_update;
+                    document.getElementById('currentPageInfo').textContent = `${currentPage} / ${totalPages}`;
+                    
+                    displaySpreadsheet(result.data);
+                    updatePagination();
+                } else {
+                    showError(result.message);
+                }
+            } catch (error) {
+                showError('加载数据失败: ' + error.message);
+            }
+        }
+
+        // 显示表格（使用 Handsontable）
+        function displaySpreadsheet(data) {
+            if (data.length === 0) {
+                document.getElementById('spreadsheet').innerHTML = '<div style="text-align:center;padding:50px;color:#999;">📭 暂无数据</div>';
+                return;
+            }
+
+            // 格式化日期列
+            const formattedData = data.map((row, rowIndex) => {
+                if (rowIndex === 0) return row; // 表头不格式化
+                return row.map((cell, colIndex) => {
+                    if (colIndex === 0) {
+                        return formatDateToChinese(cell);
+                    }
+                    return cell === null || cell === undefined || cell === '' ? '-' : cell;
+                });
+            });
+
+            const container = document.getElementById('spreadsheet');
+            
+            // 如果已存在实例，先销毁
+            if (hot) {
+                hot.destroy();
+            }
+
+            // 创建 Handsontable 实例
+            hot = new Handsontable(container, {
+                data: formattedData.slice(1),  // 去掉表头行
+                colHeaders: formattedData[0],  // 使用第一行作为表头
+                rowHeaders: true,
+                width: '100%',
+                height: 600,
+                licenseKey: 'non-commercial-and-evaluation',
+                readOnly: true,
+                stretchH: 'all',
+                columnSorting: true,
+                fixedColumnsLeft: 1,  // 固定第一列（日期列）
+                contextMenu: ['copy'],  // 只允许复制
+                manualColumnResize: true,
+                manualRowResize: false,
+                cells: function(row, col) {
+                    const cellProperties = {};
+                    
+                    // 第一列（日期列）特殊样式
+                    if (col === 0) {
+                        cellProperties.className = 'htCenter htMiddle';
+                    } else {
+                        cellProperties.className = 'htCenter htMiddle';
+                    }
+                    
+                    return cellProperties;
+                }
+            });
+        }
+
+        // 更新分页
+        function updatePagination() {
+            let paginationHtml = '<div class="pagination">';
+            
+            // 上一页按钮
+            paginationHtml += `<button class="page-btn" onclick="loadData(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                ◀ 上一页
+            </button>`;
+
+            // 页码按钮
+            const maxButtons = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+            if (endPage - startPage < maxButtons - 1) {
+                startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+
+            if (startPage > 1) {
+                paginationHtml += `<button class="page-btn" onclick="loadData(1)">1</button>`;
+                if (startPage > 2) {
+                    paginationHtml += `<span class="page-info">...</span>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="loadData(${i})">
+                    ${i}
+                </button>`;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    paginationHtml += `<span class="page-info">...</span>`;
+                }
+                paginationHtml += `<button class="page-btn" onclick="loadData(${totalPages})">${totalPages}</button>`;
+            }
+
+            // 下一页按钮
+            paginationHtml += `<button class="page-btn" onclick="loadData(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                下一页 ▶
+            </button>`;
+
+            paginationHtml += '</div>';
+            document.getElementById('paginationContainer').innerHTML = paginationHtml;
+        }
+
+        // 改变年份
+        function changeYear() {
+            const select = document.getElementById('yearFilter');
+            yearFilter = select.value;
+            loadData(1);
+        }
+
+        // 改变每页行数
+        function changeRowsPerPage() {
+            const select = document.getElementById('rowsPerPage');
+            rowsPerPage = parseInt(select.value);
+            loadData(1);
+        }
+
+        // 执行搜索
+        function performSearch() {
+            searchText = document.getElementById('searchInput').value.trim();
+            loadData(1);
+        }
+
+        // 清除搜索
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            searchText = '';
+            loadData(1);
+        }
+
+        // 回车键搜索
+        function handleSearchKeyPress(event) {
+            if (event.key === 'Enter') {
+                performSearch();
+            }
+        }
+
+        // 刷新数据
+        function refreshData() {
+            loadData(currentPage);
+        }
+
+        // 显示加载中
+        function showLoading() {
+            document.getElementById('spreadsheet').innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>正在加载数据...</div>
+                </div>
+            `;
+        }
+
+        // 显示错误
+        function showError(message) {
+            document.getElementById('spreadsheet').innerHTML = `
+                <div class="error">
+                    <strong>❌ 错误</strong><br>
+                    ${message}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
+
