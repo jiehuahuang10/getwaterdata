@@ -795,39 +795,34 @@ def get_excel_data():
         ws = wb.active
         
         # 获取所有数据
-        all_data = []
+        all_rows = []
         for row in ws.iter_rows(values_only=True):
             row_data = [cell if cell is not None else '' for cell in row]
-            all_data.append(row_data)
+            all_rows.append(row_data)
         
         wb.close()
         
-        if len(all_data) == 0:
+        if len(all_rows) < 5:
             return jsonify({
                 'success': False,
-                'message': 'Excel文件为空'
+                'message': 'Excel文件数据不完整'
             })
         
-        # 修复表头：如果第一行的列名大部分是空的，使用自定义列名
-        if all_data and len(all_data) > 0:
-            header = all_data[0]
-            empty_count = sum(1 for cell in header if not cell or str(cell).strip() == '')
-            
-            # 如果超过一半的列名是空的，使用自定义列名
-            if empty_count > len(header) / 2:
-                custom_header = [
-                    '日期', '石滩供水服务部 日供水', '进水', '三江', '沙埔', '结新大塘', 
-                    '新塘大塘', '三江街总表', '边界过水用户（新侨）', '边界过水用户（增江口）', 
-                    '宁西总表', '沙庄总表', '如丰大围600拟表', '二围村6600拟表', '中山围', 
-                    '列2', '列3', '列4', '列5', '列6', '列7', '列8', '列9', '列10',
-                    '列11', '列12', '列13', '列14', '列15', '列16', '列17', '列18', '列19', '列20',
-                    '列21', '列22', '列23', '列24', '列25', '列26', '列27'
-                ]
-                # 确保自定义表头长度与实际列数匹配
-                while len(custom_header) < len(header):
-                    custom_header.append(f'列{len(custom_header) + 1}')
-                custom_header = custom_header[:len(header)]
-                all_data[0] = custom_header
+        # Excel 结构：
+        # 第1行: 标题（监控表流量明细）
+        # 第2行: 空行
+        # 第3行: 合并单元格标题（进水、片区过水/进水）
+        # 第4行: 真正的表头
+        # 第5行开始: 数据
+        
+        # 使用第4行作为表头（索引3）
+        header = all_rows[3]
+        
+        # 从第5行开始作为数据（索引4）
+        data_rows = all_rows[4:]
+        
+        # 组合成最终数据：[表头, 数据行1, 数据行2, ...]
+        all_data = [header] + data_rows
         
         # 按年份过滤（如果不是"全部"）
         if year_filter != 'all':
