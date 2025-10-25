@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-飞书文件同步模块
+飞书文件同步模块 - 调试增强版
 将本地 Excel 文件上传到飞书云空间
 """
 
@@ -223,46 +223,6 @@ class FeishuUploader:
                 'success': False,
                 'message': f'上传出错: {str(e)}'
             }
-    
-    def delete_file(self, file_token):
-        """
-        删除飞书云空间中的文件
-        
-        Args:
-            file_token: 文件 token
-            
-        Returns:
-            dict: {'success': bool, 'message': str}
-        """
-        print(f"[飞书] 删除文件: {file_token}")
-        
-        if not self.tenant_access_token:
-            if not self.get_tenant_access_token():
-                return {'success': False, 'message': '无法获取 access_token'}
-        
-        url = f"{self.base_url}/drive/v1/files/{file_token}"
-        
-        headers = {
-            "Authorization": f"Bearer {self.tenant_access_token}"
-        }
-        
-        try:
-            response = requests.delete(url, headers=headers, timeout=10)
-            response.raise_for_status()
-            
-            result = response.json()
-            
-            if result.get('code') == 0:
-                print(f"[飞书] ✅ 文件删除成功")
-                return {'success': True, 'message': '文件删除成功'}
-            else:
-                error_msg = result.get('msg', '未知错误')
-                print(f"[飞书] ❌ 删除失败: {error_msg}")
-                return {'success': False, 'message': f'删除失败: {error_msg}'}
-                
-        except Exception as e:
-            print(f"[飞书] ❌ 删除出错: {str(e)}")
-            return {'success': False, 'message': f'删除出错: {str(e)}'}
 
 
 def sync_excel_to_feishu(file_path, folder_token, file_name=None):
