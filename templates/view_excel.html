@@ -489,13 +489,20 @@
                 return;
             }
 
+            console.log('原始表头数据:', data[0]);
+
             let html = '<div class="table-wrapper"><table>';
             
-            // 表头
+            // 表头 - 如果表头为空，使用列索引
             if (data.length > 0) {
                 html += '<thead><tr>';
-                data[0].forEach(cell => {
-                    html += `<th>${cell || ''}</th>`;
+                data[0].forEach((cell, index) => {
+                    // 如果单元格为空或只是空白，使用列号
+                    let headerText = cell;
+                    if (!cell || cell.trim() === '') {
+                        headerText = `列${index + 1}`;
+                    }
+                    html += `<th>${headerText}</th>`;
                 });
                 html += '</tr></thead>';
             }
