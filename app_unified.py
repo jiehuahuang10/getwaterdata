@@ -801,12 +801,13 @@ def get_monthly_stats():
         data_rows = all_rows[4:]
         
         # 筛选指定年月的数据
-        target_month = f"{year}年{int(month)}月"
+        year_int = int(year)
+        month_int = int(month)
         monthly_data = []
         
         for row in data_rows:
             date_val = row[0]
-            if date_val and target_month in str(date_val):
+            if isinstance(date_val, datetime) and date_val.year == year_int and date_val.month == month_int:
                 monthly_data.append(row)
         
         wb.close()
@@ -883,15 +884,14 @@ def get_quarterly_stats():
         data_rows = all_rows[4:]
         
         # 筛选季度数据
+        year_int = int(year)
+        months_int = [int(m) for m in months]
         quarterly_data = []
+        
         for row in data_rows:
             date_val = row[0]
-            if date_val and year in str(date_val):
-                for month in months:
-                    target_month = f"{year}年{int(month)}月"
-                    if target_month in str(date_val):
-                        quarterly_data.append(row)
-                        break
+            if isinstance(date_val, datetime) and date_val.year == year_int and date_val.month in months_int:
+                quarterly_data.append(row)
         
         wb.close()
         
