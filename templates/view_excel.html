@@ -143,6 +143,8 @@
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
+            max-height: 600px;
+            overflow-y: auto;
         }
 
         table {
@@ -181,6 +183,7 @@
             align-items: center;
             gap: 10px;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
 
         .page-btn {
@@ -212,6 +215,7 @@
         .page-info {
             color: #666;
             font-size: 14px;
+            padding: 0 10px;
         }
 
         .loading {
@@ -277,10 +281,6 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
 
-        .highlight {
-            background: #fff3cd !important;
-        }
-
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -322,18 +322,16 @@
 
         <div class="controls">
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="🔍 搜索日期、水表名称或数据...">
-                <button class="btn btn-primary" onclick="searchTable()">搜索</button>
+                <input type="text" id="searchInput" placeholder="🔍 搜索日期、水表名称或数据..." onkeypress="handleSearchKeyPress(event)">
+                <button class="btn btn-primary" onclick="performSearch()">搜索</button>
                 <button class="btn btn-secondary" onclick="clearSearch()">清除</button>
             </div>
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-secondary" onclick="refreshData()">🔄 刷新</button>
                 <select id="rowsPerPage" class="btn btn-secondary" onchange="changeRowsPerPage()" style="padding: 10px;">
-                    <option value="50">每页 50 行</option>
-                    <option value="100" selected>每页 100 行</option>
-                    <option value="200">每页 200 行</option>
+                    <option value="100">每页 100 行</option>
+                    <option value="200" selected>每页 200 行</option>
                     <option value="500">每页 500 行</option>
-                    <option value="all">显示全部</option>
                 </select>
             </div>
         </div>
@@ -370,31 +368,46 @@
     <a href="/" class="back-home" title="返回主页">🏠</a>
 
     <script>
-        let allData = [];
-        let filteredData = [];
         let currentPage = 1;
-        let rowsPerPage = 100;
+        let rowsPerPage = 200;
+        let totalPages = 1;
+        let totalRows = 0;
+        let searchText = '';
 
         // 页面加载时获取数据
         window.onload = function() {
-            loadExcelData();
+            loadData(1);
         };
 
-        // 加载 Excel 数据
-        async function loadExcelData() {
+        // 加载数据
+        async function loadData(page) {
             try {
-                const response = await fetch('/api/get_excel_data');
+                showLoading();
+                
+                const params = new URLSearchParams({
+                    page: page,
+                    page_size: rowsPerPage
+                });
+                
+                if (searchText) {
+                    params.append('search', searchText);
+                }
+                
+                const response = await fetch(`/api/get_excel_data?${params}`);
                 const result = await response.json();
 
                 if (result.success) {
-                    allData = result.data;
-                    filteredData = allData;
+                    currentPage = result.current_page;
+                    totalPages = result.total_pages;
+                    totalRows = result.total_rows;
                     
-                    document.getElementById('totalRows').textContent = result.total_rows;
+                    document.getElementById('totalRows').textContent = result.total_rows.toLocaleString();
                     document.getElementById('totalCols').textContent = result.total_cols;
                     document.getElementById('lastUpdate').textContent = result.last_update;
+                    document.getElementById('currentPageInfo').textContent = `${currentPage} / ${totalPages}`;
                     
-                    displayTable();
+                    displayTable(result.data);
+                    updatePagination();
                 } else {
                     showError(result.message);
                 }
@@ -404,22 +417,18 @@
         }
 
         // 显示表格
-        function displayTable() {
-            if (filteredData.length === 0) {
+        function displayTable(data) {
+            if (data.length === 0) {
                 document.getElementById('content').innerHTML = '<div class="no-data">📭 暂无数据</div>';
                 return;
             }
 
-            const start = rowsPerPage === 'all' ? 0 : (currentPage - 1) * rowsPerPage;
-            const end = rowsPerPage === 'all' ? filteredData.length : start + parseInt(rowsPerPage);
-            const pageData = filteredData.slice(start, end);
-
             let html = '<div class="table-wrapper"><table>';
             
             // 表头
-            if (pageData.length > 0) {
+            if (data.length > 0) {
                 html += '<thead><tr>';
-                pageData[0].forEach(cell => {
+                data[0].forEach(cell => {
                     html += `<th>${cell || ''}</th>`;
                 });
                 html += '</tr></thead>';
@@ -427,10 +436,10 @@
 
             // 表体
             html += '<tbody>';
-            for (let i = 1; i < pageData.length; i++) {
+            for (let i = 1; i < data.length; i++) {
                 html += '<tr>';
-                pageData[i].forEach(cell => {
-                    html += `<td>${cell !== null && cell !== undefined ? cell : ''}</td>`;
+                data[i].forEach(cell => {
+                    html += `<td>${cell !== null && cell !== undefined && cell !== '' ? cell : '-'}</td>`;
                 });
                 html += '</tr>';
             }
@@ -438,119 +447,95 @@
             html += '</table></div>';
 
             document.getElementById('content').innerHTML = html;
-
-            // 更新分页信息
-            updatePagination();
         }
 
         // 更新分页
         function updatePagination() {
-            const totalPages = rowsPerPage === 'all' ? 1 : Math.ceil(filteredData.length / rowsPerPage);
-            
-            document.getElementById('currentPageInfo').textContent = 
-                rowsPerPage === 'all' ? '全部显示' : `${currentPage} / ${totalPages}`;
-
             let paginationHtml = '<div class="pagination">';
             
-            if (rowsPerPage !== 'all') {
-                // 上一页按钮
-                paginationHtml += `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
-                    ◀ 上一页
-                </button>`;
+            // 上一页按钮
+            paginationHtml += `<button class="page-btn" onclick="loadData(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                ◀ 上一页
+            </button>`;
 
-                // 页码按钮
-                const maxButtons = 5;
-                let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
-                let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+            // 页码按钮
+            const maxButtons = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
 
-                if (endPage - startPage < maxButtons - 1) {
-                    startPage = Math.max(1, endPage - maxButtons + 1);
+            if (endPage - startPage < maxButtons - 1) {
+                startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+
+            if (startPage > 1) {
+                paginationHtml += `<button class="page-btn" onclick="loadData(1)">1</button>`;
+                if (startPage > 2) {
+                    paginationHtml += `<span class="page-info">...</span>`;
                 }
+            }
 
-                if (startPage > 1) {
-                    paginationHtml += `<button class="page-btn" onclick="changePage(1)">1</button>`;
-                    if (startPage > 2) {
-                        paginationHtml += `<span class="page-info">...</span>`;
-                    }
-                }
-
-                for (let i = startPage; i <= endPage; i++) {
-                    paginationHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">
-                        ${i}
-                    </button>`;
-                }
-
-                if (endPage < totalPages) {
-                    if (endPage < totalPages - 1) {
-                        paginationHtml += `<span class="page-info">...</span>`;
-                    }
-                    paginationHtml += `<button class="page-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
-                }
-
-                // 下一页按钮
-                paginationHtml += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
-                    下一页 ▶
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="loadData(${i})">
+                    ${i}
                 </button>`;
             }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    paginationHtml += `<span class="page-info">...</span>`;
+                }
+                paginationHtml += `<button class="page-btn" onclick="loadData(${totalPages})">${totalPages}</button>`;
+            }
+
+            // 下一页按钮
+            paginationHtml += `<button class="page-btn" onclick="loadData(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                下一页 ▶
+            </button>`;
 
             paginationHtml += '</div>';
             document.getElementById('paginationContainer').innerHTML = paginationHtml;
         }
 
-        // 切换页码
-        function changePage(page) {
-            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-            if (page >= 1 && page <= totalPages) {
-                currentPage = page;
-                displayTable();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        }
-
         // 改变每页行数
         function changeRowsPerPage() {
             const select = document.getElementById('rowsPerPage');
-            rowsPerPage = select.value === 'all' ? 'all' : parseInt(select.value);
-            currentPage = 1;
-            displayTable();
+            rowsPerPage = parseInt(select.value);
+            loadData(1);  // 重新加载第一页
         }
 
-        // 搜索表格
-        function searchTable() {
-            const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
-            
-            if (searchText === '') {
-                filteredData = allData;
-            } else {
-                filteredData = allData.filter(row => {
-                    return row.some(cell => {
-                        if (cell === null || cell === undefined) return false;
-                        return String(cell).toLowerCase().includes(searchText);
-                    });
-                });
-            }
-
-            currentPage = 1;
-            displayTable();
+        // 执行搜索
+        function performSearch() {
+            searchText = document.getElementById('searchInput').value.trim();
+            loadData(1);  // 搜索后跳转到第一页
         }
 
         // 清除搜索
         function clearSearch() {
             document.getElementById('searchInput').value = '';
-            filteredData = allData;
-            currentPage = 1;
-            displayTable();
+            searchText = '';
+            loadData(1);
+        }
+
+        // 回车键搜索
+        function handleSearchKeyPress(event) {
+            if (event.key === 'Enter') {
+                performSearch();
+            }
         }
 
         // 刷新数据
         function refreshData() {
+            loadData(currentPage);
+        }
+
+        // 显示加载中
+        function showLoading() {
             document.getElementById('content').innerHTML = `
                 <div class="loading">
                     <div class="loading-spinner"></div>
-                    <div>正在刷新数据...</div>
+                    <div>正在加载数据...</div>
                 </div>
             `;
-            loadExcelData();
         }
 
         // 显示错误
@@ -562,16 +547,6 @@
                 </div>
             `;
         }
-
-        // 支持回车键搜索
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('searchInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    searchTable();
-                }
-            });
-        });
     </script>
 </body>
 </html>
-

@@ -763,7 +763,7 @@ def view_excel():
 def get_excel_data():
     """
     获取Excel数据（只读模式）
-    返回整个Excel表格的数据，前端负责分页和搜索
+    支持分页加载，避免一次性传输过大数据
     """
     try:
         excel_path = DATA_SOURCE_PATH
@@ -774,18 +774,40 @@ def get_excel_data():
                 'message': f'Excel文件不存在: {excel_path}'
             })
         
+        # 获取分页参数
+        page = request.args.get('page', 1, type=int)
+        page_size = request.args.get('page_size', 200, type=int)  # 默认每页200行
+        search_text = request.args.get('search', '', type=str)
+        
         # 读取Excel文件
         wb = openpyxl.load_workbook(excel_path, read_only=True, data_only=True)
         ws = wb.active
         
         # 获取所有数据
-        data = []
+        all_data = []
         for row in ws.iter_rows(values_only=True):
-            # 将每行数据转换为列表，处理None值
             row_data = [cell if cell is not None else '' for cell in row]
-            data.append(row_data)
+            all_data.append(row_data)
         
         wb.close()
+        
+        # 如果有搜索条件，过滤数据
+        if search_text:
+            search_lower = search_text.lower()
+            filtered_data = [all_data[0]]  # 保留表头
+            for row in all_data[1:]:
+                if any(search_lower in str(cell).lower() for cell in row):
+                    filtered_data.append(row)
+        else:
+            filtered_data = all_data
+        
+        # 计算分页
+        total_rows = len(filtered_data)
+        total_pages = (total_rows + page_size - 1) // page_size
+        start_idx = (page - 1) * page_size
+        end_idx = min(start_idx + page_size, total_rows)
+        
+        page_data = filtered_data[start_idx:end_idx]
         
         # 获取文件修改时间
         file_time = os.path.getmtime(excel_path)
@@ -793,9 +815,12 @@ def get_excel_data():
         
         return jsonify({
             'success': True,
-            'data': data,
-            'total_rows': len(data),
-            'total_cols': len(data[0]) if data else 0,
+            'data': page_data,
+            'total_rows': total_rows,
+            'total_cols': len(all_data[0]) if all_data else 0,
+            'current_page': page,
+            'page_size': page_size,
+            'total_pages': total_pages,
             'last_update': last_update,
             'file_name': '石滩供水服务部每日总供水情况.xlsx'
         })
