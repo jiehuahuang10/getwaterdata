@@ -550,7 +550,18 @@
                         const formattedDate = formatDateToChinese(cell);
                         html += `<td>${formattedDate}</td>`;
                     } else {
-                        html += `<td>${cell !== null && cell !== undefined && cell !== '' ? cell : '-'}</td>`;
+                        // 处理数字：四舍五入取整
+                        let displayValue = cell;
+                        if (cell !== null && cell !== undefined && cell !== '') {
+                            // 如果是数字（包括字符串形式的数字），四舍五入取整
+                            const numValue = Number(cell);
+                            if (!isNaN(numValue)) {
+                                displayValue = Math.round(numValue);
+                            }
+                        } else {
+                            displayValue = '-';
+                        }
+                        html += `<td>${displayValue}</td>`;
                     }
                 });
                 html += '</tr>';
