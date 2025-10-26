@@ -739,6 +739,28 @@ def execute_auto_update():
         # 执行更新
         result = update_excel_with_real_data(target_date)
         
+        # 如果更新成功，重新保存Excel以保留公式
+        if result.get('success'):
+            try:
+                excel_path = os.path.abspath(DATA_SOURCE_PATH)
+                print(f"[INFO] 重新保存Excel文件以保留公式: {excel_path}")
+                
+                # 以保留公式的方式重新加载和保存
+                wb = openpyxl.load_workbook(excel_path, data_only=False)
+                wb.calculation.calcMode = 'auto'
+                wb.calculation.fullCalcOnLoad = True
+                wb.save(excel_path)
+                wb.close()
+                
+                print("[SUCCESS] Excel文件已重新保存，公式已保留")
+                result['formula_preserved'] = True
+                result['note'] = '公式已保留，将在Excel中打开时自动计算'
+                
+            except Exception as save_error:
+                print(f"[WARNING] 重新保存失败: {save_error}")
+                result['formula_preserved'] = False
+                result['save_warning'] = f'数据已更新，但重新保存失败: {str(save_error)}'
+        
         return jsonify(result)
         
     except ImportError as e:
