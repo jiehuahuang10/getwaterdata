@@ -307,29 +307,37 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            width: 45px;
-            height: 45px;
+            padding: 10px 20px;
             background: linear-gradient(135deg, #0288D1 0%, #0097A7 100%);
             color: white;
-            border-radius: 10px;
-            display: flex;
+            border-radius: 8px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
+            font-size: 14px;
+            font-weight: 600;
             text-decoration: none;
             box-shadow: 0 3px 10px rgba(2, 136, 209, 0.3);
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             z-index: 100;
+            letter-spacing: 0.5px;
+        }
+
+        .back-home::before {
+            content: '←';
+            margin-right: 8px;
+            font-size: 16px;
+            font-weight: bold;
         }
 
         .back-home:hover {
-            transform: translateY(-2px) scale(1.05);
+            transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(2, 136, 209, 0.5);
             background: linear-gradient(135deg, #0277BD 0%, #00838F 100%);
         }
 
         .back-home:active {
-            transform: translateY(0) scale(1.02);
+            transform: translateY(0);
         }
 
         .loading {
@@ -352,7 +360,7 @@
 </head>
 <body>
     <div class="container">
-        <a href="/" class="back-home">🏠</a>
+        <a href="/" class="back-home">返回主页</a>
         
         <div class="header">
             <h1>
