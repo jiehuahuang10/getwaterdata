@@ -338,8 +338,8 @@
             </button>
         </div>
 
-        <button class="btn btn-info" onclick="refreshInfo()" id="refreshBtn" style="width: 100%;">
-            🔄 刷新信息
+        <button class="btn btn-info" onclick="checkFileInfo()" id="checkBtn" style="width: 100%;">
+            📁 检查文件
         </button>
 
         <div class="loading" id="loading">
@@ -369,20 +369,48 @@
             refreshInfo();
         };
 
-        // 刷新信息
+        // 刷新信息（页面加载时调用）
         function refreshInfo() {
             fetch('/get_info')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         document.getElementById('excelPath').textContent = data.excel_path;
-                        // 已删除totalRows和lastMonth的更新
-                    } else {
-                        showMessage('获取信息失败: ' + data.message, 'error');
                     }
                 })
                 .catch(error => {
-                    showMessage('网络错误: ' + error, 'error');
+                    console.error('获取信息失败:', error);
+                });
+        }
+
+        // 检查文件信息（按钮点击时调用）
+        function checkFileInfo() {
+            const btn = document.getElementById('checkBtn');
+            btn.disabled = true;
+            btn.textContent = '🔍 检查中...';
+            
+            fetch('/get_info')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let fileInfo = 
+                            `📁 文件信息\n\n` +
+                            `📄 文件名: ${data.excel_path}\n` +
+                            `📊 总行数: ${data.total_rows}\n` +
+                            `📅 最后月份: ${data.last_month || '未找到'}\n` +
+                            `✅ 文件状态: 正常`;
+                        
+                        showMessage(fileInfo, 'success');
+                    } else {
+                        showMessage('❌ 文件检查失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showMessage('❌ 网络错误: ' + error, 'error');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.textContent = '📁 检查文件';
                 });
         }
 
