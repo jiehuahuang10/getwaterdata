@@ -246,6 +246,40 @@
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
+
+        .ag-theme-alpine .ag-paging-panel {
+            border-top: 2px solid #e0e0e0;
+            padding: 15px;
+            background: #f5f5f5;
+            font-size: 14px;
+        }
+
+        .ag-theme-alpine .ag-paging-button {
+            background: linear-gradient(135deg, #0288D1 0%, #0097A7 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 0 5px;
+        }
+
+        .ag-theme-alpine .ag-paging-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(2, 136, 209, 0.4);
+        }
+
+        .ag-theme-alpine .ag-paging-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .ag-theme-alpine .ag-paging-page-summary-panel {
+            color: #1976D2;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -403,7 +437,12 @@
                 animateRows: true,
                 rowSelection: 'multiple',
                 enableRangeSelection: true,
-                suppressMenuHide: true
+                suppressMenuHide: true,
+                // 启用分页
+                pagination: true,
+                paginationPageSize: 50,  // 每页显示50行
+                paginationPageSizeSelector: [20, 50, 100, 200],  // 可选的每页行数
+                suppressPaginationPanel: false
             };
 
             const gridDiv = document.getElementById('dataGrid');
