@@ -58,6 +58,25 @@ def calculate_water_formulas(excel_path):
             if col in col_indices:
                 print(f"  {col}: 列{col_indices[col]}")
         
+        # 定义辅助函数
+        def get_cell_value(row, col_name):
+            """安全获取单元格值，处理列不存在的情况"""
+            col_idx = col_indices.get(col_name, 0)
+            if col_idx == 0:
+                return 0
+            try:
+                value = ws.cell(row, col_idx).value
+                return value if value is not None else 0
+            except:
+                return 0
+        
+        def to_float(val):
+            """将值转换为浮点数"""
+            try:
+                return float(val) if val not in (None, '', '-') else 0
+            except:
+                return 0
+        
         # 从第5行开始计算（数据行）
         data_start_row = 5
         prev_total = None
@@ -72,43 +91,26 @@ def calculate_water_formulas(excel_path):
                 if not date_value:
                     continue
                 
-                # 获取各列的值（处理可能的列索引为0的情况）
+                # 获取关键列索引（仅用于检查）
                 lixin_col = col_indices.get('荔新大道', 0)
                 xincheng_col = col_indices.get('新城大道', 0)
                 sanjiang_col = col_indices.get('三江新总表', 0)
-                bianjie1_col = col_indices.get('边界过水', 0)
-                bianjie2_col = col_indices.get('边界过水(请11)', 0)
-                ningxi_col = col_indices.get('宁西2总表', 0)
-                shazhuang_col = col_indices.get('沙庄总表', 0)
                 
+                # 检查关键列是否存在
                 if lixin_col == 0 or xincheng_col == 0 or sanjiang_col == 0:
                     if updated_count == 0:
                         print(f"[ERROR] 关键列索引未找到，停止处理")
                         print(f"  荔新大道: {lixin_col}, 新城大道: {xincheng_col}, 三江新总表: {sanjiang_col}")
                     break
                 
-                lixin = ws.cell(row_idx, lixin_col).value or 0
-                xincheng = ws.cell(row_idx, xincheng_col).value or 0
-                sanjiang = ws.cell(row_idx, sanjiang_col).value or 0
-                bianjie1 = ws.cell(row_idx, bianjie1_col).value or 0
-                bianjie2 = ws.cell(row_idx, bianjie2_col).value or 0
-                ningxi = ws.cell(row_idx, ningxi_col).value or 0
-                shazhuang = ws.cell(row_idx, shazhuang_col).value or 0
-                
-                # 转换为数值
-                def to_float(val):
-                    try:
-                        return float(val) if val not in (None, '', '-') else 0
-                    except:
-                        return 0
-                
-                lixin = to_float(lixin)
-                xincheng = to_float(xincheng)
-                sanjiang = to_float(sanjiang)
-                bianjie1 = to_float(bianjie1)
-                bianjie2 = to_float(bianjie2)
-                ningxi = to_float(ningxi)
-                shazhuang = to_float(shazhuang)
+                # 使用安全方法获取所有列的值并转换为数值
+                lixin = to_float(get_cell_value(row_idx, '荔新大道'))
+                xincheng = to_float(get_cell_value(row_idx, '新城大道'))
+                sanjiang = to_float(get_cell_value(row_idx, '三江新总表'))
+                bianjie1 = to_float(get_cell_value(row_idx, '边界过水'))
+                bianjie2 = to_float(get_cell_value(row_idx, '边界过水(请11)'))
+                ningxi = to_float(get_cell_value(row_idx, '宁西2总表'))
+                shazhuang = to_float(get_cell_value(row_idx, '沙庄总表'))
                 
                 # 计算公式
                 # 1. 石滩供水服务部日供水
@@ -180,9 +182,9 @@ if __name__ == '__main__':
     success = calculate_water_formulas(excel_path)
     
     if success:
-        print("\n✅ 公式计算成功！")
+        print("\n[SUCCESS] 公式计算成功!")
         sys.exit(0)
     else:
-        print("\n❌ 公式计算失败！")
+        print("\n[ERROR] 公式计算失败!")
         sys.exit(1)
 
