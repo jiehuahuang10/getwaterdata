@@ -786,6 +786,11 @@ def quarterly_report():
     """季报统计页面"""
     return render_template('quarterly_report.html')
 
+@app.route('/quarterly_report_aggrid')
+def quarterly_report_aggrid():
+    """季报统计页面 (AG-Grid版本)"""
+    return render_template('quarterly_report_aggrid.html')
+
 @app.route('/api/get_monthly_stats')
 def get_monthly_stats():
     """获取月度统计数据"""
