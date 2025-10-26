@@ -524,7 +524,10 @@
         // 禁用/启用按钮
         function disableButtons(disabled) {
             document.getElementById('addBtn1').disabled = disabled;
-            document.getElementById('refreshBtn').disabled = disabled;
+            const checkBtn = document.getElementById('checkBtn');
+            if (checkBtn) {
+                checkBtn.disabled = disabled;
+            }
         }
 
         // 添加到历史

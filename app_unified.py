@@ -238,37 +238,49 @@ def get_info():
         
         ws = wb["石滩区"]
         
-        # 查找最后一个月份（从月份标题行查找）
+        # 查找最后一个月份（从单元格中查找）
         last_month = None
-        all_months = []  # 存储所有找到的月份
+        all_months = []  # 存储所有找到的月份 (year, month, month_str)
         
-        # 从后往前查找整个工作表，寻找包含"年"和"月"的单元格
-        for row in range(ws.max_row, 0, -1):
-            # 检查前5列，通常月份标题在这些列
-            for col in range(1, 6):
-                cell_value = ws.cell(row, col).value
-                if cell_value and isinstance(cell_value, str):
-                    # 匹配 "2025年9月" 这样的格式
-                    match = re.search(r'(\d{4})年(\d{1,2})月', cell_value)
-                    if match:
-                        month_str = cell_value.strip()
-                        if month_str not in all_months:
-                            all_months.append(month_str)
+        # 遍历所有单元格，查找月份标题
+        for row in ws.iter_rows():
+            for cell in row:
+                if cell.value:
+                    # 情况1: 文本格式的月份 "2025年6月"
+                    if isinstance(cell.value, str):
+                        match = re.search(r'(\d{4})年(\d{1,2})月', cell.value)
+                        if match:
+                            year = int(match.group(1))
+                            month = int(match.group(2))
+                            month_str = f"{year}年{month}月"
+                            if (year, month, month_str) not in all_months:
+                                all_months.append((year, month, month_str))
+                    
+                    # 情况2: Excel日期序列号（整数，且在合理范围内）
+                    elif isinstance(cell.value, (int, float)):
+                        # Excel日期序列号通常在 40000-50000 之间（2009-2037年）
+                        if 40000 <= cell.value <= 50000:
+                            try:
+                                from datetime import datetime, timedelta
+                                excel_start = datetime(1899, 12, 30)
+                                actual_date = excel_start + timedelta(days=int(cell.value))
+                                # 只取每月1号的日期作为月份标题
+                                if actual_date.day == 1:
+                                    year = actual_date.year
+                                    month = actual_date.month
+                                    month_str = f"{year}年{month}月"
+                                    if (year, month, month_str) not in all_months:
+                                        all_months.append((year, month, month_str))
+                            except:
+                                pass
         
-        # 如果没找到，尝试从合并单元格中查找
-        if not all_months:
-            for merged_range in ws.merged_cells.ranges:
-                cell = ws.cell(merged_range.min_row, merged_range.min_col)
-                if cell.value and isinstance(cell.value, str):
-                    match = re.search(r'(\d{4})年(\d{1,2})月', cell.value)
-                    if match:
-                        month_str = cell.value.strip()
-                        if month_str not in all_months:
-                            all_months.append(month_str)
-        
-        # 取最后一个月份（第一个找到的就是最后的）
+        # 按年月排序，取最新的
         if all_months:
-            last_month = all_months[0]
+            all_months.sort(reverse=True)  # 降序排列
+            last_month = all_months[0][2]  # 取最新月份的字符串
+        
+        # 获取总行数
+        total_rows = ws.max_row
         
         wb.close()
         

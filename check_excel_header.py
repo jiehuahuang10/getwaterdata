@@ -33,7 +33,7 @@ for i, cell in enumerate(rows[1]):
 
 print(f"\n第3行（总共 {len(rows[2])} 列）:")
 for i, cell in enumerate(rows[2]):
-    if i < 10:  # 只显示前10列
+    if i < 20:  # 显示前20列
         print(f"  列{i}: '{cell}'")
 
 wb.close()
