@@ -370,9 +370,20 @@
             const header = data[0];
             const dataRows = data.slice(1);
 
-            // 过滤掉没有数据的行（除了日期列，其他列都为空、0、'-'或null）
+            // 获取昨天的日期（23:59:59）
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            yesterday.setHours(23, 59, 59, 999);
+
+            // 过滤掉没有数据的行和未来日期的行
             const filteredRows = dataRows.filter(row => {
-                // 检查从第2列开始是否有有效数据
+                // 1. 检查日期是否在昨天或之前
+                const rowDate = new Date(row[0]);
+                if (rowDate > yesterday) {
+                    return false;  // 过滤掉今天和未来的数据
+                }
+
+                // 2. 检查从第2列开始是否有有效数据
                 for (let i = 1; i < row.length; i++) {
                     const cell = row[i];
                     // 只有非空、非0、非'-'的值才算有效数据
