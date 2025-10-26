@@ -1,9 +1,9 @@
-name: 定时更新Excel数据
+name: 定时更新Excel数据（已禁用）
 
 on:
-  schedule:
-    # 每天北京时间下午6点（UTC时间上午10点）
-    - cron: '0 10 * * *'
+  # schedule:
+  #   # 每天北京时间下午6点（UTC时间上午10点）
+  #   - cron: '0 10 * * *'
   workflow_dispatch:  # 允许手动触发
 
 jobs:
