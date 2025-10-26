@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app_unified.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app_unified.py"
+    }
+  ],
+  "env": {
+    "PYTHONUNBUFFERED": "1"
+  },
+  "regions": ["hkg1"]
+}
+
