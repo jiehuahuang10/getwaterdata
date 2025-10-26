@@ -352,7 +352,8 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    allData = result.data;
+                    // 过滤和排序数据
+                    allData = filterAndSortData(result.data);
                     displayGrid(allData);
                     updateInfo(result);
                 } else {
@@ -361,6 +362,35 @@
             } catch (error) {
                 alert('加载数据失败: ' + error.message);
             }
+        }
+
+        function filterAndSortData(data) {
+            if (!data || data.length === 0) return data;
+
+            const header = data[0];
+            const dataRows = data.slice(1);
+
+            // 过滤掉没有数据的行（除了日期列，其他列都为空或'-'）
+            const filteredRows = dataRows.filter(row => {
+                // 检查从第2列开始是否有有效数据
+                for (let i = 1; i < row.length; i++) {
+                    const cell = row[i];
+                    if (cell !== null && cell !== undefined && cell !== '' && cell !== '-') {
+                        return true;  // 有数据，保留这行
+                    }
+                }
+                return false;  // 没有数据，过滤掉
+            });
+
+            // 按日期倒序排序（最新的在前）
+            const sortedRows = filteredRows.sort((a, b) => {
+                const dateA = new Date(a[0]);
+                const dateB = new Date(b[0]);
+                return dateB - dateA;  // 倒序
+            });
+
+            // 返回表头 + 排序后的数据
+            return [header, ...sortedRows];
         }
 
         function displayGrid(data) {
@@ -451,8 +481,10 @@
         }
 
         function updateInfo(result) {
-            document.getElementById('totalRows').textContent = result.total_rows || '-';
-            document.getElementById('totalCols').textContent = result.data && result.data[0] ? result.data[0].length : '-';
+            // 使用过滤后的实际行数
+            const actualRows = allData ? allData.length - 1 : 0;  // 减去表头
+            document.getElementById('totalRows').textContent = actualRows;
+            document.getElementById('totalCols').textContent = allData && allData[0] ? allData[0].length : '-';
             document.getElementById('lastUpdate').textContent = new Date().toLocaleString('zh-CN');
         }
 
