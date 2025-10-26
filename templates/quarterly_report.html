@@ -506,7 +506,20 @@
                 return;
             }
 
-            let html = '<div class="summary-table"><h2 style="margin-bottom: 15px;">📈 统计汇总</h2>';
+            const year = document.getElementById('yearSelect').value;
+            const quarter = document.getElementById('quarterSelect').value;
+            const quarterNames = {
+                '1': '第一季度 (1-3月)',
+                '2': '第二季度 (4-6月)',
+                '3': '第三季度 (7-9月)',
+                '4': '第四季度 (10-12月)'
+            };
+
+            let html = '<div class="summary-table">';
+            html += `<h2 style="margin-bottom: 10px;">📈 统计汇总</h2>`;
+            html += `<p style="color: #667eea; font-size: 15px; font-weight: 600; margin-bottom: 15px; text-align: center;">
+                        📅 ${year}年 ${quarterNames[quarter]} 数据统计
+                     </p>`;
             html += '<div class="table-wrapper"><table><thead><tr>';
             html += '<th>指标名称</th><th>总计</th><th>平均</th><th>最大</th><th>最小</th><th>天数</th>';
             html += '</tr></thead><tbody>';
