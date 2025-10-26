@@ -120,6 +120,7 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add excel_exports/石滩供水服务部每日总供水情况.xlsx
+        git add excel_exports/石滩区分区计量.xlsx
         git add *.json
         git add last_execution_summary.json
         if git diff --staged --quiet; then
