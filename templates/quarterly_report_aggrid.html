@@ -486,7 +486,7 @@
             };
 
             const gridDiv = document.getElementById('dataGrid');
-            dataGridApi = agGrid.createGrid(gridDiv, gridOptions);
+            dataGridApi = new agGrid.Grid(gridDiv, gridOptions);
         }
 
         function displaySummaryGrid(summary, year, quarter) {
@@ -539,7 +539,7 @@
             };
 
             const gridDiv = document.getElementById('summaryGrid');
-            summaryGridApi = agGrid.createGrid(gridDiv, gridOptions);
+            summaryGridApi = new agGrid.Grid(gridDiv, gridOptions);
         }
 
         function exportReport() {
