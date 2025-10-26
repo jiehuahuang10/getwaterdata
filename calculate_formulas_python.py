@@ -36,14 +36,15 @@ def calculate_water_formulas(excel_path):
         print(f"[INFO] 表头: {headers[:10]}...")  # 只打印前10列
         
         # 找到列索引（移除换行符和空格）
+        # 注意：只保留第一次出现的列（因为Excel中有重复的列名）
         col_indices = {}
         for idx, header in enumerate(headers, start=1):
             if header:
                 # 移除所有换行符和前后空格
                 clean_header = str(header).replace('\n', '').replace('\r', '').strip()
-                col_indices[clean_header] = idx
-                # 也保留原始header（以防万一）
-                col_indices[header] = idx
+                # 只在第一次出现时记录（避免被后面的重复列覆盖）
+                if clean_header not in col_indices:
+                    col_indices[clean_header] = idx
         
         # 关键列
         key_columns = [
