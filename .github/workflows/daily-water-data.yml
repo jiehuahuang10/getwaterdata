@@ -100,6 +100,20 @@ jobs:
     #     FEISHU_FOLDER_TOKEN: ${{ secrets.FEISHU_FOLDER_TOKEN }}
     #   continue-on-error: true
     
+    - name: 计算Excel公式
+      if: steps.check_result.outputs.success == 'true'
+      run: |
+        echo "=================================="
+        echo "🧮 开始计算Excel公式..."
+        echo "=================================="
+        python calculate_formulas_python.py
+        if [ $? -eq 0 ]; then
+          echo "✅ 公式计算完成"
+        else
+          echo "⚠️ 公式计算失败，但继续执行"
+        fi
+      continue-on-error: true
+    
     - name: 提交更新的Excel文件
       if: steps.check_result.outputs.success == 'true'
       run: |
