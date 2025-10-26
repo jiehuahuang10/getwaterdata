@@ -806,6 +806,94 @@ def view_excel_old():
     """显示Excel在线查看页面（旧版本）"""
     return render_template('view_excel.html')
 
+# ==================== 分区计量表查看 ====================
+
+@app.route('/view_partition_meter')
+def view_partition_meter():
+    """显示分区计量表查看页面"""
+    return render_template('view_partition_meter.html')
+
+@app.route('/api/get_partition_meter_data')
+def get_partition_meter_data():
+    """获取分区计量表数据"""
+    try:
+        sheet_name = request.args.get('sheet', '石滩区')  # 默认显示"石滩区"工作表
+        
+        if not os.path.exists(EXCEL_PATH):
+            return jsonify({
+                'success': False,
+                'message': f'Excel文件不存在: {EXCEL_PATH}'
+            })
+        
+        # 读取Excel文件
+        wb = openpyxl.load_workbook(EXCEL_PATH, data_only=True)
+        
+        # 获取所有工作表名称
+        sheet_names = wb.sheetnames
+        
+        # 检查请求的工作表是否存在
+        if sheet_name not in sheet_names:
+            sheet_name = sheet_names[0]  # 如果不存在，使用第一个工作表
+        
+        ws = wb[sheet_name]
+        
+        # 读取所有数据
+        data = []
+        for row in ws.iter_rows(values_only=True):
+            # 转换为列表，处理None值
+            row_data = []
+            for cell in row:
+                if cell is None:
+                    row_data.append('')
+                elif isinstance(cell, (int, float)):
+                    # 检查是否是Excel日期序列号
+                    if isinstance(cell, int) and 40000 <= cell <= 50000:
+                        try:
+                            excel_start = datetime(1899, 12, 30)
+                            actual_date = excel_start + timedelta(days=cell)
+                            row_data.append(f"{actual_date.year}年{actual_date.month}月{actual_date.day}日")
+                        except:
+                            row_data.append(cell)
+                    else:
+                        row_data.append(cell)
+                else:
+                    row_data.append(str(cell))
+            data.append(row_data)
+        
+        # 获取合并单元格信息
+        merged_cells = []
+        for merged_range in ws.merged_cells.ranges:
+            merged_cells.append({
+                'start_row': merged_range.min_row - 1,  # 转换为0索引
+                'start_col': merged_range.min_col - 1,
+                'end_row': merged_range.max_row - 1,
+                'end_col': merged_range.max_col - 1
+            })
+        
+        wb.close()
+        
+        # 获取文件最后修改时间
+        file_time = os.path.getmtime(EXCEL_PATH)
+        last_update = datetime.fromtimestamp(file_time).strftime('%Y-%m-%d %H:%M:%S')
+        
+        return jsonify({
+            'success': True,
+            'data': data,
+            'sheet_names': sheet_names,
+            'current_sheet': sheet_name,
+            'merged_cells': merged_cells,
+            'total_rows': len(data),
+            'total_cols': len(data[0]) if data else 0,
+            'last_update': last_update,
+            'file_name': '石滩区分区计量.xlsx'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'读取Excel失败: {str(e)}'
+        })
+
 @app.route('/view_excel_pro')
 def view_excel_pro():
     """显示Excel在线查看页面（Handsontable专业版）"""
