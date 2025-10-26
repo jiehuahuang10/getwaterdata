@@ -35,10 +35,14 @@ def calculate_water_formulas(excel_path):
         
         print(f"[INFO] 表头: {headers[:10]}...")  # 只打印前10列
         
-        # 找到列索引
+        # 找到列索引（移除换行符和空格）
         col_indices = {}
         for idx, header in enumerate(headers, start=1):
             if header:
+                # 移除所有换行符和前后空格
+                clean_header = str(header).replace('\n', '').replace('\r', '').strip()
+                col_indices[clean_header] = idx
+                # 也保留原始header（以防万一）
                 col_indices[header] = idx
         
         # 关键列
@@ -59,16 +63,36 @@ def calculate_water_formulas(excel_path):
         
         updated_count = 0
         
+        # 遍历所有行，但跳过空行
         for row_idx in range(data_start_row, ws.max_row + 1):
             try:
-                # 获取各列的值
-                lixin = ws.cell(row_idx, col_indices.get('荔新大道', 0)).value or 0
-                xincheng = ws.cell(row_idx, col_indices.get('新城大道', 0)).value or 0
-                sanjiang = ws.cell(row_idx, col_indices.get('三江新总表', 0)).value or 0
-                bianjie1 = ws.cell(row_idx, col_indices.get('边界过水', 0)).value or 0
-                bianjie2 = ws.cell(row_idx, col_indices.get('边界过水(请11)', 0)).value or 0
-                ningxi = ws.cell(row_idx, col_indices.get('宁西2总表', 0)).value or 0
-                shazhuang = ws.cell(row_idx, col_indices.get('沙庄总表', 0)).value or 0
+                # 检查日期列是否有值（第1列），如果没有则跳过
+                date_value = ws.cell(row_idx, 1).value
+                if not date_value:
+                    continue
+                
+                # 获取各列的值（处理可能的列索引为0的情况）
+                lixin_col = col_indices.get('荔新大道', 0)
+                xincheng_col = col_indices.get('新城大道', 0)
+                sanjiang_col = col_indices.get('三江新总表', 0)
+                bianjie1_col = col_indices.get('边界过水', 0)
+                bianjie2_col = col_indices.get('边界过水(请11)', 0)
+                ningxi_col = col_indices.get('宁西2总表', 0)
+                shazhuang_col = col_indices.get('沙庄总表', 0)
+                
+                if lixin_col == 0 or xincheng_col == 0 or sanjiang_col == 0:
+                    if updated_count == 0:
+                        print(f"[ERROR] 关键列索引未找到，停止处理")
+                        print(f"  荔新大道: {lixin_col}, 新城大道: {xincheng_col}, 三江新总表: {sanjiang_col}")
+                    break
+                
+                lixin = ws.cell(row_idx, lixin_col).value or 0
+                xincheng = ws.cell(row_idx, xincheng_col).value or 0
+                sanjiang = ws.cell(row_idx, sanjiang_col).value or 0
+                bianjie1 = ws.cell(row_idx, bianjie1_col).value or 0
+                bianjie2 = ws.cell(row_idx, bianjie2_col).value or 0
+                ningxi = ws.cell(row_idx, ningxi_col).value or 0
+                shazhuang = ws.cell(row_idx, shazhuang_col).value or 0
                 
                 # 转换为数值
                 def to_float(val):
@@ -125,7 +149,9 @@ def calculate_water_formulas(excel_path):
                     print(f"[INFO] 已处理 {updated_count} 行...")
                 
             except Exception as row_error:
-                print(f"[WARNING] 第{row_idx}行计算失败: {row_error}")
+                # 只在前100次错误时打印，避免日志过长
+                if updated_count < 100:
+                    print(f"[WARNING] 第{row_idx}行计算失败: {row_error}")
                 continue
         
         # 保存文件
