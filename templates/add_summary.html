@@ -376,8 +376,7 @@
                 .then(data => {
                     if (data.success) {
                         document.getElementById('excelPath').textContent = data.excel_path;
-                        document.getElementById('totalRows').textContent = data.total_rows;
-                        document.getElementById('lastMonth').textContent = data.last_month || '未找到';
+                        // 已删除totalRows和lastMonth的更新
                     } else {
                         showMessage('获取信息失败: ' + data.message, 'error');
                     }
