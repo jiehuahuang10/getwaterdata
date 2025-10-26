@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>月报统计 (AG-Grid) - 石滩供水服务部</title>
+    
+    <!-- AG-Grid CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/styles/ag-theme-alpine.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+            min-height: 100vh;
+            padding: 20px;
+            animation: gradientShift 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid transparent;
+            border-image: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #4facfe) 1;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: #2d3436;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #636e72;
+            font-size: 16px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+
+        select {
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        select:hover {
+            border-color: #4facfe;
+            box-shadow: 0 2px 8px rgba(79, 172, 254, 0.2);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+            padding: 10px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .stat-card:nth-child(1) {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            box-shadow: 0 10px 30px rgba(250, 112, 154, 0.4);
+        }
+
+        .stat-card:nth-child(2) {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+            box-shadow: 0 10px 30px rgba(48, 207, 208, 0.4);
+        }
+
+        .stat-card:nth-child(3) {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            box-shadow: 0 10px 30px rgba(168, 237, 234, 0.4);
+        }
+
+        .stat-card:nth-child(4) {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            box-shadow: 0 10px 30px rgba(255, 154, 158, 0.4);
+        }
+
+        .stat-card h3 {
+            font-size: 15px;
+            margin-bottom: 15px;
+            opacity: 0.95;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-card .value {
+            font-size: 38px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .grid-container {
+            margin-bottom: 30px;
+        }
+
+        .ag-theme-alpine {
+            --ag-header-background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --ag-header-foreground-color: white;
+            --ag-font-size: 13px;
+            --ag-font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+
+        #dataGrid {
+            height: 600px;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        #summaryGrid {
+            height: 500px;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .summary-title {
+            margin-top: 40px;
+            margin-bottom: 10px;
+            font-size: 24px;
+            color: #2d3436;
+        }
+
+        .summary-subtitle {
+            color: #667eea;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .back-home {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            text-decoration: none;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .back-home:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #667eea;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .error {
+            background: #fff5f5;
+            color: #c53030;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #c53030;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span>📊</span>
+                <span>月报统计 (AG-Grid) - 石滩供水服务部</span>
+            </h1>
+            <p class="subtitle">📈 月度数据统计分析</p>
+        </div>
+
+        <div class="controls">
+            <select id="yearSelect">
+                <option value="2025">2025年</option>
+                <option value="2024">2024年</option>
+                <option value="2023">2023年</option>
+            </select>
+            <select id="monthSelect">
+                <option value="1">1月</option>
+                <option value="2">2月</option>
+                <option value="3">3月</option>
+                <option value="4">4月</option>
+                <option value="5">5月</option>
+                <option value="6">6月</option>
+                <option value="7">7月</option>
+                <option value="8">8月</option>
+                <option value="9">9月</option>
+                <option value="10">10月</option>
+                <option value="11">11月</option>
+                <option value="12">12月</option>
+            </select>
+            <button class="btn btn-primary" onclick="loadMonthlyData()">📊 查询统计</button>
+            <button class="btn btn-primary" onclick="exportReport()">📥 导出报表</button>
+        </div>
+
+        <div id="statsCards" class="stats-cards"></div>
+        
+        <div class="grid-container">
+            <div id="dataGrid" class="ag-theme-alpine"></div>
+        </div>
+
+        <h2 class="summary-title">📈 统计汇总</h2>
+        <p id="summarySubtitle" class="summary-subtitle"></p>
+        <div class="grid-container">
+            <div id="summaryGrid" class="ag-theme-alpine"></div>
+        </div>
+    </div>
+
+    <a href="/" class="back-home">🏠</a>
+
+    <!-- AG-Grid JS -->
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/dist/ag-grid-community.min.js"></script>
+
+    <script>
+        let dataGridApi;
+        let summaryGridApi;
+
+        // 页面加载时设置当前年月
+        window.onload = function() {
+            const now = new Date();
+            document.getElementById('yearSelect').value = now.getFullYear();
+            document.getElementById('monthSelect').value = now.getMonth() + 1;
+            loadMonthlyData();
+        };
+
+        async function loadMonthlyData() {
+            const year = document.getElementById('yearSelect').value;
+            const month = document.getElementById('monthSelect').value;
+
+            document.getElementById('statsCards').innerHTML = '<div class="loading">📊 正在加载数据...</div>';
+
+            try {
+                const response = await fetch(`/api/get_monthly_stats?year=${year}&month=${month}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayStatsCards(result.summary, year, month);
+                    displayDataGrid(result.header, result.data);
+                    displaySummaryGrid(result.summary, year, month);
+                } else {
+                    document.getElementById('statsCards').innerHTML = 
+                        `<div class="error">❌ ${result.message}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('statsCards').innerHTML = 
+                    `<div class="error">❌ 加载失败: ${error.message}</div>`;
+            }
+        }
+
+        function displayStatsCards(summary, year, month) {
+            if (!summary || Object.keys(summary).length === 0) {
+                return;
+            }
+
+            const keyMetrics = ['荔新大道', '三江新总表', '宁西2总表', '如丰大道600监控表'];
+            let html = '';
+
+            for (const metric of keyMetrics) {
+                const data = summary[metric];
+                if (data) {
+                    html += `
+                        <div class="stat-card">
+                            <h3>${metric}</h3>
+                            <div class="value">${data.total.toLocaleString()}</div>
+                            <div class="label">月累计 (m³)</div>
+                        </div>
+                    `;
+                }
+            }
+
+            document.getElementById('statsCards').innerHTML = html;
+        }
+
+        function displayDataGrid(header, data) {
+            if (!data || data.length === 0) {
+                document.getElementById('dataGrid').innerHTML = 
+                    '<div style="text-align: center; padding: 60px; color: #999;">📭 该月暂无数据</div>';
+                return;
+            }
+
+            // 构建列定义
+            const columnDefs = header.map((col, idx) => {
+                if (idx === 0) {
+                    return {
+                        headerName: col || '日期',
+                        field: 'col' + idx,
+                        pinned: 'left',
+                        width: 140,
+                        cellStyle: { fontWeight: 'bold', backgroundColor: '#fff3e0', color: '#e65100' },
+                        valueFormatter: params => {
+                            if (params.value) {
+                                const date = new Date(params.value);
+                                return date.toLocaleDateString('zh-CN');
+                            }
+                            return '-';
+                        }
+                    };
+                }
+                return {
+                    headerName: col || `列${idx + 1}`,
+                    field: 'col' + idx,
+                    width: 120,
+                    valueFormatter: params => {
+                        if (params.value === null || params.value === undefined || params.value === '') {
+                            return '-';
+                        }
+                        if (typeof params.value === 'number') {
+                            return Math.round(params.value).toLocaleString();
+                        }
+                        return params.value;
+                    }
+                };
+            });
+
+            // 构建行数据
+            const rowData = data.map(row => {
+                const rowObj = {};
+                row.forEach((cell, idx) => {
+                    rowObj['col' + idx] = cell;
+                });
+                return rowObj;
+            });
+
+            // 销毁旧的grid
+            if (dataGridApi) {
+                dataGridApi.destroy();
+            }
+
+            // 创建新的grid
+            const gridOptions = {
+                columnDefs: columnDefs,
+                rowData: rowData,
+                defaultColDef: {
+                    sortable: true,
+                    filter: true,
+                    resizable: true
+                },
+                animateRows: true,
+                rowSelection: 'multiple',
+                enableRangeSelection: true,
+                suppressMenuHide: true
+            };
+
+            const gridDiv = document.getElementById('dataGrid');
+            dataGridApi = agGrid.createGrid(gridDiv, gridOptions);
+        }
+
+        function displaySummaryGrid(summary, year, month) {
+            if (!summary || Object.keys(summary).length === 0) {
+                return;
+            }
+
+            document.getElementById('summarySubtitle').textContent = 
+                `📅 ${year}年${month}月 数据统计`;
+
+            const columnDefs = [
+                { headerName: '指标名称', field: 'name', pinned: 'left', width: 200, cellStyle: { fontWeight: 'bold' } },
+                { headerName: '总计', field: 'total', width: 150, valueFormatter: params => params.value.toLocaleString() },
+                { headerName: '平均', field: 'average', width: 150, valueFormatter: params => params.value.toLocaleString() },
+                { headerName: '最大', field: 'max', width: 150, valueFormatter: params => params.value.toLocaleString() },
+                { headerName: '最小', field: 'min', width: 150, valueFormatter: params => params.value.toLocaleString() },
+                { headerName: '天数', field: 'count', width: 100 }
+            ];
+
+            const rowData = Object.entries(summary).map(([name, data]) => ({
+                name: name,
+                total: data.total,
+                average: data.average,
+                max: data.max,
+                min: data.min,
+                count: data.count
+            }));
+
+            // 销毁旧的grid
+            if (summaryGridApi) {
+                summaryGridApi.destroy();
+            }
+
+            const gridOptions = {
+                columnDefs: columnDefs,
+                rowData: rowData,
+                defaultColDef: {
+                    sortable: true,
+                    filter: true,
+                    resizable: true
+                },
+                animateRows: true
+            };
+
+            const gridDiv = document.getElementById('summaryGrid');
+            summaryGridApi = agGrid.createGrid(gridDiv, gridOptions);
+        }
+
+        function exportReport() {
+            if (dataGridApi) {
+                dataGridApi.exportDataAsCsv({
+                    fileName: `月报统计_${document.getElementById('yearSelect').value}年${document.getElementById('monthSelect').value}月.csv`
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+

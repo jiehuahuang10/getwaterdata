@@ -776,6 +776,11 @@ def monthly_report():
     """月报统计页面"""
     return render_template('monthly_report.html')
 
+@app.route('/monthly_report_aggrid')
+def monthly_report_aggrid():
+    """月报统计页面 (AG-Grid版本)"""
+    return render_template('monthly_report_aggrid.html')
+
 @app.route('/quarterly_report')
 def quarterly_report():
     """季报统计页面"""
