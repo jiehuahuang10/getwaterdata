@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>查看分区计量表</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .back-home {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-home::before {
+            content: '←';
+            font-size: 18px;
+        }
+
+        .back-home:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+            padding-top: 20px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .sheet-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sheet-selector label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .sheet-selector select {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sheet-selector select:hover {
+            border-color: #667eea;
+        }
+
+        .sheet-selector select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .info-bar {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .info-item strong {
+            color: #333;
+        }
+
+        .table-container {
+            width: 100%;
+            max-height: 600px;
+            overflow: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .excel-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            background: white;
+        }
+
+        .excel-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+            min-width: 80px;
+        }
+
+        /* 说明文字行左对齐 */
+        .excel-table td.text-left {
+            text-align: left;
+            padding-left: 15px;
+        }
+
+        .excel-table tr:hover {
+            background-color: #f0f7ff;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 18px;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(17, 153, 142, 0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(17, 153, 142, 0.4);
+        }
+
+        /* 标题行样式 */
+        .title-row {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* 月份标题行样式 */
+        .month-row {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            font-weight: bold;
+        }
+
+        /* 合计行样式 */
+        .summary-row {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        /* 分类标题样式 */
+        .category-row {
+            background-color: #e9ecef;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-home">返回主页</a>
+        
+        <h1>📋 分区计量表查看</h1>
+        <p class="subtitle">完整显示石滩区分区计量数据</p>
+
+        <div class="controls">
+            <div class="sheet-selector">
+                <label>📑 选择工作表：</label>
+                <select id="sheetSelect" onchange="changeSheet()">
+                    <option value="">加载中...</option>
+                </select>
+            </div>
+
+            <div class="info-bar">
+                <div class="info-item">
+                    <span>📊 总行数：</span>
+                    <strong id="totalRows">-</strong>
+                </div>
+                <div class="info-item">
+                    <span>📋 总列数：</span>
+                    <strong id="totalCols">-</strong>
+                </div>
+                <div class="info-item">
+                    <span>🕐 更新时间：</span>
+                    <strong id="lastUpdate">-</strong>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="refreshData()">
+                    🔄 刷新数据
+                </button>
+                <button class="btn btn-secondary" onclick="exportData()">
+                    💾 导出CSV
+                </button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div id="loading" class="loading">正在加载数据</div>
+            <table id="excelTable" class="excel-table" style="display: none;"></table>
+        </div>
+    </div>
+
+    <script>
+        let currentSheet = '石滩区';
+        let allSheets = [];
+        let currentData = null;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+        });
+
+        // 加载数据
+        async function loadData() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('excelTable').style.display = 'none';
+
+                const response = await fetch(`/api/get_partition_meter_data?sheet=${encodeURIComponent(currentSheet)}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    allSheets = result.sheet_names;
+                    currentData = result;
+                    updateSheetSelector(result.sheet_names, result.current_sheet);
+                    displayTable(result.data, result.merged_cells);
+                    updateInfo(result);
+                } else {
+                    alert('加载失败：' + result.message);
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                alert('加载数据失败：' + error);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // 更新工作表选择器
+        function updateSheetSelector(sheets, current) {
+            const select = document.getElementById('sheetSelect');
+            select.innerHTML = '';
+            
+            sheets.forEach(sheet => {
+                const option = document.createElement('option');
+                option.value = sheet;
+                option.textContent = sheet;
+                if (sheet === current) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+
+        // 切换工作表
+        function changeSheet() {
+            currentSheet = document.getElementById('sheetSelect').value;
+            loadData();
+        }
+
+        // 显示表格
+        function displayTable(data, mergedCells) {
+            if (!data || data.length === 0) {
+                alert('没有数据');
+                return;
+            }
+
+            const table = document.getElementById('excelTable');
+            table.innerHTML = '';
+
+            // 创建一个二维数组来标记哪些单元格已被合并
+            const mergedMap = new Array(data.length);
+            for (let i = 0; i < data.length; i++) {
+                mergedMap[i] = new Array(data[0].length).fill(false);
+            }
+
+            // 标记所有被合并的单元格（除了起始单元格）
+            mergedCells.forEach(mc => {
+                for (let r = mc.start_row; r <= mc.end_row; r++) {
+                    for (let c = mc.start_col; c <= mc.end_col; c++) {
+                        if (r !== mc.start_row || c !== mc.start_col) {
+                            mergedMap[r][c] = true;
+                        }
+                    }
+                }
+            });
+
+            // 生成表格
+            data.forEach((row, rowIndex) => {
+                const tr = document.createElement('tr');
+                
+                // 判断行类型并添加样式
+                const firstCell = row[0];
+                const firstCellStr = firstCell ? String(firstCell) : '';
+                
+                if (rowIndex === 0 && firstCellStr.includes('统计')) {
+                    tr.className = 'title-row';
+                } else if (firstCellStr.includes('年') && firstCellStr.includes('月')) {
+                    tr.className = 'month-row';
+                } else if (firstCellStr.includes('合计')) {
+                    tr.className = 'summary-row';
+                } else if (row.some(cell => {
+                    const cellStr = cell ? String(cell) : '';
+                    return cellStr.includes('监控表供水量') || cellStr.includes('损耗统计');
+                })) {
+                    tr.className = 'category-row';
+                }
+
+                row.forEach((cell, colIndex) => {
+                    // 如果这个单元格被合并了（不是起始单元格），跳过
+                    if (mergedMap[rowIndex][colIndex]) {
+                        return;
+                    }
+
+                    const td = document.createElement('td');
+                    
+                    // 检查是否是合并单元格的起始位置
+                    const merged = mergedCells.find(mc => 
+                        mc.start_row === rowIndex && mc.start_col === colIndex
+                    );
+                    
+                    if (merged) {
+                        const rowSpan = merged.end_row - merged.start_row + 1;
+                        const colSpan = merged.end_col - merged.start_col + 1;
+                        if (rowSpan > 1) td.rowSpan = rowSpan;
+                        if (colSpan > 1) td.colSpan = colSpan;
+                    }
+
+                    // 格式化单元格内容
+                    let cellValue = cell;
+                    if (cellValue === null || cellValue === undefined || cellValue === '') {
+                        cellValue = '';
+                    } else if (typeof cellValue === 'number') {
+                        // 检查是否是百分比（小数且绝对值小于10）
+                        if (Math.abs(cellValue) < 10 && cellValue !== 0 && cellValue % 1 !== 0) {
+                            cellValue = (cellValue * 100).toFixed(2) + '%';
+                        }
+                    }
+                    
+                    td.textContent = cellValue;
+                    
+                    // 检查是否是说明性文字（包含"区月供水量"或"抄表时间"或"流量计取值时间"）
+                    const cellStr = String(cellValue);
+                    if (cellStr.includes('区月供水量') || 
+                        cellStr.includes('区供水量') || 
+                        cellStr.includes('抄表时间') || 
+                        cellStr.includes('流量计取值时间')) {
+                        td.className = 'text-left';
+                    }
+                    
+                    tr.appendChild(td);
+                });
+
+                table.appendChild(tr);
+            });
+
+            table.style.display = 'table';
+        }
+
+        // 更新信息
+        function updateInfo(result) {
+            document.getElementById('totalRows').textContent = result.total_rows;
+            document.getElementById('totalCols').textContent = result.total_cols;
+            document.getElementById('lastUpdate').textContent = result.last_update;
+        }
+
+        // 刷新数据
+        function refreshData() {
+            loadData();
+        }
+
+        // 导出CSV
+        function exportData() {
+            if (!currentData || !currentData.data) {
+                alert('没有数据可导出');
+                return;
+            }
+
+            const data = currentData.data;
+            let csv = '';
+            
+            data.forEach(row => {
+                const csvRow = row.map(cell => {
+                    if (cell === null || cell === undefined) return '';
+                    // 如果包含逗号或引号，需要用引号包裹
+                    const cellStr = String(cell);
+                    if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                        return '"' + cellStr.replace(/"/g, '""') + '"';
+                    }
+                    return cellStr;
+                }).join(',');
+                csv += csvRow + '\n';
+            });
+
+            // 添加BOM以支持Excel正确显示中文
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `分区计量表_${currentSheet}_${new Date().toISOString().slice(0, 10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
+
