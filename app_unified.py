@@ -796,6 +796,137 @@ def quarterly_report_aggrid():
     """季报统计页面 (AG-Grid版本)"""
     return render_template('quarterly_report_aggrid.html')
 
+@app.route('/weekly_report_aggrid')
+def weekly_report_aggrid():
+    """周报统计页面 (AG-Grid版本)"""
+    return render_template('weekly_report_aggrid.html')
+
+@app.route('/api/get_weekly_stats')
+def get_weekly_stats():
+    """获取周度统计数据"""
+    try:
+        year = request.args.get('year', str(datetime.now().year), type=str)
+        week = request.args.get('week', '1', type=str)
+        
+        excel_path = DATA_SOURCE_PATH
+        if not os.path.exists(excel_path):
+            return jsonify({'success': False, 'message': 'Excel文件不存在'})
+        
+        wb = openpyxl.load_workbook(excel_path, read_only=True, data_only=True)
+        ws = wb.active
+        
+        # 读取表头（第4行）
+        all_rows = list(ws.iter_rows(values_only=True))
+        header = all_rows[3]
+        data_rows = all_rows[4:]
+        
+        # 计算指定周的日期范围
+        year_int = int(year)
+        week_int = int(week)
+        
+        # 获取该年第一天
+        jan_1 = datetime(year_int, 1, 1)
+        # 计算到第一个周一的天数
+        days_to_monday = (7 - jan_1.weekday()) % 7
+        first_monday = jan_1 + timedelta(days=days_to_monday)
+        
+        # 计算指定周的开始和结束日期
+        week_start = first_monday + timedelta(weeks=week_int - 1)
+        week_end = week_start + timedelta(days=6)
+        
+        # 筛选指定周的数据
+        weekly_data = []
+        for row in data_rows:
+            date_val = row[0]
+            if isinstance(date_val, datetime):
+                if week_start <= date_val <= week_end:
+                    weekly_data.append(row)
+        
+        wb.close()
+        
+        # 格式化日期范围
+        date_range = f"{week_start.strftime('%m月%d日')} - {week_end.strftime('%m月%d日')}"
+        
+        if not weekly_data:
+            return jsonify({
+                'success': True,
+                'data': [],
+                'summary': [],
+                'stats': [],
+                'date_range': date_range,
+                'message': '该周暂无数据'
+            })
+        
+        # 计算统计数据
+        stats = []
+        summary_data = [['指标名称'] + list(header[1:])]  # 表头
+        
+        # 统计指标
+        stat_names = ['总计', '平均值', '最大值', '最小值']
+        
+        for stat_name in stat_names:
+            row_data = [stat_name]
+            for col_idx in range(1, len(header)):
+                values = []
+                for row in weekly_data:
+                    if col_idx < len(row) and row[col_idx] is not None:
+                        try:
+                            val = float(row[col_idx])
+                            if val != 0:  # 排除0值
+                                values.append(val)
+                        except (ValueError, TypeError):
+                            pass
+                
+                if values:
+                    if stat_name == '总计':
+                        row_data.append(sum(values))
+                    elif stat_name == '平均值':
+                        row_data.append(sum(values) / len(values))
+                    elif stat_name == '最大值':
+                        row_data.append(max(values))
+                    elif stat_name == '最小值':
+                        row_data.append(min(values))
+                else:
+                    row_data.append(0)
+            
+            summary_data.append(row_data)
+        
+        # 生成统计卡片数据（取前4列的总计）
+        if len(weekly_data) > 0:
+            for col_idx in range(1, min(5, len(header))):
+                col_name = header[col_idx] if col_idx < len(header) else f'列{col_idx}'
+                values = []
+                for row in weekly_data:
+                    if col_idx < len(row) and row[col_idx] is not None:
+                        try:
+                            val = float(row[col_idx])
+                            if val != 0:
+                                values.append(val)
+                        except (ValueError, TypeError):
+                            pass
+                
+                if values:
+                    stats.append({
+                        'name': col_name,
+                        'value': round(sum(values)),
+                        'unit': '周累计 (m³)'
+                    })
+        
+        # 返回数据
+        return jsonify({
+            'success': True,
+            'data': [list(header)] + weekly_data,
+            'summary': summary_data,
+            'stats': stats,
+            'date_range': date_range
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'查询失败: {str(e)}'
+        })
+
 @app.route('/api/get_monthly_stats')
 def get_monthly_stats():
     """获取月度统计数据"""
