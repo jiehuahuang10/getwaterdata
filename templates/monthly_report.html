@@ -467,12 +467,16 @@
         }
 
         function displayDataTable(header, data) {
+            const contentDiv = document.getElementById('content');
+            
             if (!data || data.length === 0) {
-                document.getElementById('content').innerHTML = 
+                contentDiv.className = '';  // 移除所有class
+                contentDiv.innerHTML = 
                     '<div style="text-align: center; padding: 60px; color: #999; font-size: 16px;">📭 该月暂无数据</div>';
                 return;
             }
 
+            contentDiv.className = '';  // 移除loading类
             let html = '<div class="table-wrapper"><table><thead><tr>';
             
             // 表头
@@ -499,7 +503,7 @@
             });
 
             html += '</tbody></table></div>';
-            document.getElementById('content').innerHTML = html;
+            contentDiv.innerHTML = html;
         }
 
         function displaySummaryTable(header, summary) {
