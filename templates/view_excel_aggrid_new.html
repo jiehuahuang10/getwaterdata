@@ -347,7 +347,8 @@
             const search = searchInput ? searchInput.value : '';
 
             try {
-                const response = await fetch(`/api/get_excel_data?page=1&per_page=10000&year=${year}&search=${encodeURIComponent(search)}`);
+                // 使用 page_size 参数，设置为一个很大的值以获取所有数据
+                const response = await fetch(`/api/get_excel_data?page=1&page_size=100000&year=${year}&search=${encodeURIComponent(search)}`);
                 const result = await response.json();
 
                 if (result.success) {
