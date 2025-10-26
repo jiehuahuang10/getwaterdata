@@ -228,10 +228,45 @@
         }
 
         .ag-theme-alpine {
-            --ag-header-background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --ag-header-background-color: #4facfe;
             --ag-header-foreground-color: white;
             --ag-font-size: 13px;
             --ag-font-family: 'Microsoft YaHei', Arial, sans-serif;
+            --ag-cell-horizontal-padding: 12px;
+        }
+
+        /* 自定义表头样式 */
+        .ag-theme-alpine .ag-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-bottom: 2px solid #4facfe;
+        }
+
+        .ag-theme-alpine .ag-header-cell {
+            background: transparent;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .ag-theme-alpine .ag-header-cell:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 数据单元格居中 */
+        .ag-theme-alpine .ag-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        /* 行悬停效果 */
+        .ag-theme-alpine .ag-row-hover {
+            background: rgba(79, 172, 254, 0.1) !important;
+        }
+
+        /* 选中行效果 */
+        .ag-theme-alpine .ag-row-selected {
+            background: rgba(79, 172, 254, 0.2) !important;
         }
 
         #dataGrid {
@@ -435,7 +470,13 @@
                         field: 'col' + idx,
                         pinned: 'left',
                         width: 140,
-                        cellStyle: { fontWeight: 'bold', backgroundColor: '#fff3e0', color: '#e65100' },
+                        cellStyle: { 
+                            fontWeight: 'bold', 
+                            backgroundColor: '#e3f2fd', 
+                            color: '#1976d2',
+                            justifyContent: 'center',
+                            textAlign: 'center'
+                        },
                         valueFormatter: params => {
                             if (params.value) {
                                 const date = new Date(params.value);
@@ -449,6 +490,7 @@
                     headerName: col || `列${idx + 1}`,
                     field: 'col' + idx,
                     width: 120,
+                    cellStyle: { justifyContent: 'center', textAlign: 'center' },
                     valueFormatter: params => {
                         if (params.value === null || params.value === undefined || params.value === '') {
                             return '-';
@@ -503,12 +545,47 @@
                 `📅 ${year}年${month}月 数据统计`;
 
             const columnDefs = [
-                { headerName: '指标名称', field: 'name', pinned: 'left', width: 200, cellStyle: { fontWeight: 'bold' } },
-                { headerName: '总计', field: 'total', width: 150, valueFormatter: params => params.value.toLocaleString() },
-                { headerName: '平均', field: 'average', width: 150, valueFormatter: params => params.value.toLocaleString() },
-                { headerName: '最大', field: 'max', width: 150, valueFormatter: params => params.value.toLocaleString() },
-                { headerName: '最小', field: 'min', width: 150, valueFormatter: params => params.value.toLocaleString() },
-                { headerName: '天数', field: 'count', width: 100 }
+                { 
+                    headerName: '指标名称', 
+                    field: 'name', 
+                    pinned: 'left', 
+                    width: 200, 
+                    cellStyle: { fontWeight: 'bold', justifyContent: 'flex-start', textAlign: 'left', paddingLeft: '20px' } 
+                },
+                { 
+                    headerName: '总计', 
+                    field: 'total', 
+                    width: 150, 
+                    cellStyle: { justifyContent: 'center', textAlign: 'center' },
+                    valueFormatter: params => params.value.toLocaleString() 
+                },
+                { 
+                    headerName: '平均', 
+                    field: 'average', 
+                    width: 150, 
+                    cellStyle: { justifyContent: 'center', textAlign: 'center' },
+                    valueFormatter: params => params.value.toLocaleString() 
+                },
+                { 
+                    headerName: '最大', 
+                    field: 'max', 
+                    width: 150, 
+                    cellStyle: { justifyContent: 'center', textAlign: 'center' },
+                    valueFormatter: params => params.value.toLocaleString() 
+                },
+                { 
+                    headerName: '最小', 
+                    field: 'min', 
+                    width: 150, 
+                    cellStyle: { justifyContent: 'center', textAlign: 'center' },
+                    valueFormatter: params => params.value.toLocaleString() 
+                },
+                { 
+                    headerName: '天数', 
+                    field: 'count', 
+                    width: 100,
+                    cellStyle: { justifyContent: 'center', textAlign: 'center' }
+                }
             ];
 
             const rowData = Object.entries(summary).map(([name, data]) => ({
