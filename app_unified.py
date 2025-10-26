@@ -756,7 +756,12 @@ def execute_auto_update():
 
 @app.route('/view_excel')
 def view_excel():
-    """显示Excel在线查看页面（普通版本）"""
+    """显示Excel在线查看页面（AG-Grid版本）"""
+    return render_template('view_excel_aggrid_new.html')
+
+@app.route('/view_excel_old')
+def view_excel_old():
+    """显示Excel在线查看页面（旧版本）"""
     return render_template('view_excel.html')
 
 @app.route('/view_excel_pro')

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>在线查看表格 (AG-Grid) - 石滩供水服务部</title>
+    
+    <!-- AG-Grid CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/styles/ag-theme-alpine.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #06beb6 0%, #48b1bf 25%, #36d1dc 50%, #5b86e5 75%, #667eea 100%);
+            min-height: 100vh;
+            padding: 20px;
+            animation: gradientShift 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 1600px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .back-home {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #0288D1 0%, #0097A7 100%);
+            color: white;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 3px 10px rgba(2, 136, 209, 0.3);
+            transition: all 0.3s ease;
+            z-index: 100;
+            letter-spacing: 0.5px;
+        }
+
+        .back-home::before {
+            content: '←';
+            margin-right: 8px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .back-home:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(2, 136, 209, 0.5);
+            background: linear-gradient(135deg, #0277BD 0%, #00838F 100%);
+        }
+
+        .back-home:active {
+            transform: translateY(0);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid transparent;
+            border-image: linear-gradient(90deg, #2196F3, #0288D1, #00BCD4, #0097A7) 1;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: #2d3436;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #636e72;
+            font-size: 16px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0288D1 0%, #0097A7 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(2, 136, 209, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(2, 136, 209, 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+
+        select, input {
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        select:hover, input:hover {
+            border-color: #2196F3;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            color: #1976D2;
+            font-weight: 600;
+        }
+
+        .grid-container {
+            margin-bottom: 30px;
+        }
+
+        .ag-theme-alpine {
+            --ag-header-background-color: #2196F3;
+            --ag-header-foreground-color: white;
+            --ag-font-size: 14px;
+            --ag-font-family: 'Microsoft YaHei', Arial, sans-serif;
+            --ag-cell-horizontal-padding: 12px;
+            --ag-row-height: 40px;
+        }
+
+        .ag-theme-alpine .ag-header {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            border-bottom: 2px solid #1976D2;
+        }
+
+        .ag-theme-alpine .ag-header-cell {
+            background: transparent;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .ag-theme-alpine .ag-header-cell:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .ag-theme-alpine .ag-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .ag-theme-alpine .ag-row-hover {
+            background: rgba(33, 150, 243, 0.1) !important;
+        }
+
+        .ag-theme-alpine .ag-row-selected {
+            background: rgba(33, 150, 243, 0.2) !important;
+        }
+
+        #dataGrid {
+            height: 700px;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-home">返回主页</a>
+        
+        <div class="header">
+            <h1>
+                <span>📊</span>
+                <span>石滩供水服务部每日总供水情况</span>
+            </h1>
+            <p class="subtitle">📈 只读模式 - 数据仅供查看</p>
+            <p class="subtitle" style="margin-top: 5px; font-size: 14px; color: #999;">
+                📁 数据来源: excel_exports/石滩供水服务部每日总供水情况.xlsx
+            </p>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="🔍 搜索日期、水表名称或数据..." style="flex: 1; min-width: 300px;">
+            <button class="btn btn-primary" onclick="searchData()">搜索</button>
+            <button class="btn btn-primary" onclick="clearSearch()">清除</button>
+            <select id="yearFilter" onchange="loadData()">
+                <option value="2025">📅 2025年</option>
+                <option value="2024">2024年</option>
+                <option value="2023">2023年</option>
+            </select>
+            <button class="btn btn-primary" onclick="exportData()">📥 导出CSV</button>
+        </div>
+
+        <div class="info-bar">
+            <div class="info-item">
+                <span>📊</span>
+                <span>总行数: <span id="totalRows">-</span></span>
+            </div>
+            <div class="info-item">
+                <span>📋</span>
+                <span>列数: <span id="totalCols">-</span></span>
+            </div>
+            <div class="info-item">
+                <span>🕐</span>
+                <span>最后更新: <span id="lastUpdate">-</span></span>
+            </div>
+        </div>
+        
+        <div class="grid-container">
+            <div id="dataGrid" class="ag-theme-alpine"></div>
+        </div>
+    </div>
+
+    <!-- AG-Grid JS -->
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.0/dist/ag-grid-community.min.js"></script>
+
+    <script>
+        let gridApi;
+        let allData = [];
+
+        // 页面加载时初始化
+        window.onload = function() {
+            loadData();
+        };
+
+        async function loadData() {
+            const year = document.getElementById('yearFilter').value;
+            const searchInput = document.getElementById('searchInput');
+            const search = searchInput ? searchInput.value : '';
+
+            try {
+                const response = await fetch(`/api/get_excel_data?page=1&per_page=10000&year=${year}&search=${encodeURIComponent(search)}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    allData = result.data;
+                    displayGrid(allData);
+                    updateInfo(result);
+                } else {
+                    alert('加载数据失败: ' + result.message);
+                }
+            } catch (error) {
+                alert('加载数据失败: ' + error.message);
+            }
+        }
+
+        function displayGrid(data) {
+            if (!data || data.length === 0) {
+                document.getElementById('dataGrid').innerHTML = 
+                    '<div style="text-align: center; padding: 60px; color: #999;">📭 暂无数据</div>';
+                return;
+            }
+
+            // 构建列定义
+            const header = data[0];
+            const columnDefs = header.map((col, idx) => {
+                if (idx === 0) {
+                    return {
+                        headerName: col || '日期',
+                        field: 'col' + idx,
+                        pinned: 'left',
+                        width: 140,
+                        cellStyle: { 
+                            fontWeight: 'bold', 
+                            backgroundColor: '#e3f2fd', 
+                            color: '#1976d2',
+                            justifyContent: 'center',
+                            textAlign: 'center'
+                        },
+                        valueFormatter: params => {
+                            if (params.value) {
+                                const date = new Date(params.value);
+                                return date.toLocaleDateString('zh-CN');
+                            }
+                            return '-';
+                        }
+                    };
+                }
+                return {
+                    headerName: col || `列${idx + 1}`,
+                    field: 'col' + idx,
+                    width: 120,
+                    cellStyle: { justifyContent: 'center', textAlign: 'center' },
+                    valueFormatter: params => {
+                        if (params.value === null || params.value === undefined || params.value === '') {
+                            return '-';
+                        }
+                        if (typeof params.value === 'number') {
+                            return Math.round(params.value).toLocaleString();
+                        }
+                        return params.value;
+                    }
+                };
+            });
+
+            // 构建行数据
+            const rowData = data.slice(1).map(row => {
+                const rowObj = {};
+                row.forEach((cell, idx) => {
+                    rowObj['col' + idx] = cell;
+                });
+                return rowObj;
+            });
+
+            // 销毁旧的grid
+            if (gridApi) {
+                gridApi.destroy();
+            }
+
+            // 创建新的grid
+            const gridOptions = {
+                columnDefs: columnDefs,
+                rowData: rowData,
+                defaultColDef: {
+                    sortable: true,
+                    filter: true,
+                    resizable: true
+                },
+                animateRows: true,
+                rowSelection: 'multiple',
+                enableRangeSelection: true,
+                suppressMenuHide: true
+            };
+
+            const gridDiv = document.getElementById('dataGrid');
+            gridApi = new agGrid.Grid(gridDiv, gridOptions);
+        }
+
+        function updateInfo(result) {
+            document.getElementById('totalRows').textContent = result.total_rows || '-';
+            document.getElementById('totalCols').textContent = result.data && result.data[0] ? result.data[0].length : '-';
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString('zh-CN');
+        }
+
+        function searchData() {
+            loadData();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            loadData();
+        }
+
+        function exportData() {
+            if (gridApi) {
+                const year = document.getElementById('yearFilter').value;
+                gridApi.exportDataAsCsv({
+                    fileName: `石滩供水服务部_${year}年数据.csv`
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+
