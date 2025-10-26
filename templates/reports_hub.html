@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>统计报表 - 石滩供水服务部</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #06beb6 0%, #48b1bf 25%, #36d1dc 50%, #5b86e5 75%, #667eea 100%);
+            min-height: 100vh;
+            padding: 20px;
+            animation: gradientShift 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .back-home {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #0288D1 0%, #0097A7 100%);
+            color: white;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 3px 10px rgba(2, 136, 209, 0.3);
+            transition: all 0.3s ease;
+            z-index: 100;
+            letter-spacing: 0.5px;
+        }
+
+        .back-home::before {
+            content: '←';
+            margin-right: 8px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .back-home:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(2, 136, 209, 0.5);
+            background: linear-gradient(135deg, #0277BD 0%, #00838F 100%);
+        }
+
+        .back-home:active {
+            transform: translateY(0);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-top: 20px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            color: #2d3436;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .subtitle {
+            color: #636e72;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .report-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.4s ease;
+            cursor: pointer;
+            border: 3px solid transparent;
+            text-decoration: none;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .report-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .report-card:hover::before {
+            opacity: 1;
+        }
+
+        .report-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .report-card.weekly {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-color: #f5576c;
+        }
+
+        .report-card.monthly {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            border-color: #fee140;
+        }
+
+        .report-card.quarterly {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+            border-color: #330867;
+        }
+
+        .report-icon {
+            font-size: 80px;
+            margin-bottom: 25px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .report-card.weekly .report-icon {
+            animation-delay: 0s;
+        }
+
+        .report-card.monthly .report-icon {
+            animation-delay: 0.3s;
+        }
+
+        .report-card.quarterly .report-icon {
+            animation-delay: 0.6s;
+        }
+
+        .report-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .report-desc {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.95);
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .report-features {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        .report-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+
+        .info-section {
+            margin-top: 50px;
+            padding: 30px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 15px;
+            border-left: 5px solid #2196F3;
+        }
+
+        .info-section h3 {
+            color: #1976D2;
+            font-size: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-section p {
+            color: #424242;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+
+        .info-list {
+            list-style: none;
+            margin-top: 15px;
+        }
+
+        .info-list li {
+            padding: 8px 0;
+            color: #424242;
+            font-size: 15px;
+        }
+
+        .info-list li::before {
+            content: '✓';
+            color: #2196F3;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-home">返回主页</a>
+        
+        <div class="header">
+            <h1>
+                <span>📊</span>
+                <span>统计报表中心</span>
+            </h1>
+            <p class="subtitle">选择您需要的报表类型，查看详细统计数据</p>
+        </div>
+
+        <div class="reports-grid">
+            <!-- 周报 -->
+            <a href="/weekly_report_aggrid" class="report-card weekly">
+                <div class="report-badge">AG-Grid</div>
+                <div class="report-icon">📅</div>
+                <div class="report-title">周报统计</div>
+                <div class="report-desc">
+                    按周统计供水数据，快速查看每周运行情况
+                </div>
+                <div class="report-features">
+                    <div class="feature-item">📊 52周灵活选择</div>
+                    <div class="feature-item">📈 周度趋势分析</div>
+                    <div class="feature-item">📥 一键导出报表</div>
+                </div>
+            </a>
+
+            <!-- 月报 -->
+            <a href="/monthly_report_aggrid" class="report-card monthly">
+                <div class="report-badge">AG-Grid</div>
+                <div class="report-icon">📊</div>
+                <div class="report-title">月报统计</div>
+                <div class="report-desc">
+                    按月统计供水数据，全面掌握月度运营状况
+                </div>
+                <div class="report-features">
+                    <div class="feature-item">📅 12个月完整统计</div>
+                    <div class="feature-item">📊 月度对比分析</div>
+                    <div class="feature-item">📈 汇总数据展示</div>
+                </div>
+            </a>
+
+            <!-- 季报 -->
+            <a href="/quarterly_report_aggrid" class="report-card quarterly">
+                <div class="report-badge">AG-Grid</div>
+                <div class="report-icon">📈</div>
+                <div class="report-title">季报统计</div>
+                <div class="report-desc">
+                    按季度统计供水数据，把握长期发展趋势
+                </div>
+                <div class="report-features">
+                    <div class="feature-item">📊 四季度全面统计</div>
+                    <div class="feature-item">📈 季度趋势对比</div>
+                    <div class="feature-item">📋 综合分析报告</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="info-section">
+            <h3>
+                <span>💡</span>
+                <span>报表功能说明</span>
+            </h3>
+            <p>
+                统计报表系统采用专业的AG-Grid表格组件，提供强大的数据展示和分析功能。
+                所有报表均支持排序、筛选、导出等操作，帮助您更好地分析供水数据。
+            </p>
+            <ul class="info-list">
+                <li>支持多维度数据统计（总计、平均值、最大值、最小值）</li>
+                <li>提供可视化统计卡片，直观展示关键指标</li>
+                <li>数据自动过滤，排除无效和异常值</li>
+                <li>一键导出CSV格式，便于进一步分析</li>
+                <li>响应式设计，支持各种设备访问</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+

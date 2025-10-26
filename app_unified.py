@@ -776,6 +776,11 @@ def view_excel_grid():
 
 # ==================== 功能5：月报和季报统计 ====================
 
+@app.route('/reports')
+def reports_hub():
+    """统计报表中心"""
+    return render_template('reports_hub.html')
+
 @app.route('/monthly_report')
 def monthly_report():
     """月报统计页面"""
