@@ -370,16 +370,22 @@
             const header = data[0];
             const dataRows = data.slice(1);
 
-            // 过滤掉没有数据的行（除了日期列，其他列都为空或'-'）
+            // 过滤掉没有数据的行（除了日期列，其他列都为空、0、'-'或null）
             const filteredRows = dataRows.filter(row => {
                 // 检查从第2列开始是否有有效数据
                 for (let i = 1; i < row.length; i++) {
                     const cell = row[i];
-                    if (cell !== null && cell !== undefined && cell !== '' && cell !== '-') {
-                        return true;  // 有数据，保留这行
+                    // 只有非空、非0、非'-'的值才算有效数据
+                    if (cell !== null && 
+                        cell !== undefined && 
+                        cell !== '' && 
+                        cell !== '-' && 
+                        cell !== 0 &&
+                        cell !== '0') {
+                        return true;  // 有有效数据，保留这行
                     }
                 }
-                return false;  // 没有数据，过滤掉
+                return false;  // 没有有效数据，过滤掉
             });
 
             // 按日期倒序排序（最新的在前）
