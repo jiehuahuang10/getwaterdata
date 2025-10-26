@@ -238,29 +238,31 @@ def get_info():
         
         ws = wb["石滩区"]
         
-        # 查找最后一个月份
+        # 查找最后一个月份（从月份标题行查找）
         last_month = None
-        for row in range(ws.max_row, max(0, ws.max_row - 30), -1):
-            for col in range(1, 10):
+        # 从后往前查找，寻找包含"年"和"月"的单元格
+        for row in range(ws.max_row, max(0, ws.max_row - 50), -1):
+            # 只检查前几列，通常月份标题在A-C列
+            for col in range(1, 5):
                 cell_value = ws.cell(row, col).value
-                if cell_value:
-                    # 尝试匹配文本格式的月份
-                    if isinstance(cell_value, str):
-                        match = re.search(r'(\d{4})年(\d{1,2})月', cell_value)
-                        if match:
-                            last_month = cell_value
-                            break
-                    # 尝试匹配Excel日期格式
-                    elif isinstance(cell_value, (int, float)):
-                        try:
-                            from datetime import datetime, timedelta
-                            excel_date = datetime(1899, 12, 30) + timedelta(days=int(cell_value))
-                            last_month = f"{excel_date.year}年{excel_date.month}月"
-                            break
-                        except:
-                            pass
+                if cell_value and isinstance(cell_value, str):
+                    # 匹配 "2025年9月" 这样的格式
+                    match = re.search(r'(\d{4})年(\d{1,2})月', cell_value)
+                    if match:
+                        last_month = cell_value.strip()
+                        break
             if last_month:
                 break
+        
+        # 如果没找到，尝试从合并单元格中查找
+        if not last_month:
+            for merged_range in ws.merged_cells.ranges:
+                cell = ws.cell(merged_range.min_row, merged_range.min_col)
+                if cell.value and isinstance(cell.value, str):
+                    match = re.search(r'(\d{4})年(\d{1,2})月', cell.value)
+                    if match:
+                        last_month = cell.value.strip()
+                        break
         
         wb.close()
         
