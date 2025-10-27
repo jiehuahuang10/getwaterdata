@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>数据分析仪表板 - 石滩供水服务部</title>
+    
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #5b86e5 50%, #4facfe 75%, #00f2fe 100%);
+            min-height: 100vh;
+            padding: 20px;
+            animation: gradientShift 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .back-home {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #5b86e5 0%, #667eea 100%);
+            color: white;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 3px 10px rgba(91, 134, 229, 0.4);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .back-home::before {
+            content: '←';
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .back-home:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(91, 134, 229, 0.6);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-top: 10px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: #2d3436;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #636e72;
+            font-size: 16px;
+        }
+
+        /* 关键指标卡片 */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 25px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: ripple 4s ease-in-out infinite;
+        }
+
+        @keyframes ripple {
+            0%, 100% { transform: scale(0.8); opacity: 0.3; }
+            50% { transform: scale(1.2); opacity: 0.1; }
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .metric-card.green {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .metric-card.green:hover {
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.6);
+        }
+
+        .metric-card.orange {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            box-shadow: 0 4px 15px rgba(250, 112, 154, 0.4);
+        }
+
+        .metric-card.orange:hover {
+            box-shadow: 0 8px 25px rgba(250, 112, 154, 0.6);
+        }
+
+        .metric-card.blue {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+            box-shadow: 0 4px 15px rgba(48, 207, 208, 0.4);
+        }
+
+        .metric-card.blue:hover {
+            box-shadow: 0 8px 25px rgba(48, 207, 208, 0.6);
+        }
+
+        .metric-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .metric-unit {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .metric-change {
+            font-size: 14px;
+            margin-top: 10px;
+            padding: 5px 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            display: inline-block;
+        }
+
+        .metric-change.positive {
+            background: rgba(56, 239, 125, 0.3);
+        }
+
+        .metric-change.negative {
+            background: rgba(245, 87, 108, 0.3);
+        }
+
+        /* 图表容器 */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3436;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .chart-container {
+            height: 350px;
+            width: 100%;
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-home">返回主页</a>
+        
+        <div class="header">
+            <h1>📊 数据分析仪表板</h1>
+            <p class="subtitle">实时监控供水数据，洞察业务趋势</p>
+        </div>
+
+        <!-- 关键指标卡片 -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">💧</div>
+                <div class="metric-label">昨日供水量</div>
+                <div class="metric-value" id="todayWater">-</div>
+                <div class="metric-unit">立方米</div>
+                <div class="metric-change" id="todayChange">-</div>
+            </div>
+
+            <div class="metric-card blue">
+                <div class="metric-icon">📈</div>
+                <div class="metric-label">环比增长率</div>
+                <div class="metric-value" id="growthRate">-</div>
+                <div class="metric-unit">%</div>
+            </div>
+
+            <div class="metric-card orange">
+                <div class="metric-icon">📅</div>
+                <div class="metric-label">本月累计供水</div>
+                <div class="metric-value" id="monthTotal">-</div>
+                <div class="metric-unit">立方米</div>
+                <div class="metric-change" id="monthDays">-</div>
+            </div>
+
+            <div class="metric-card green">
+                <div class="metric-icon">🔢</div>
+                <div class="metric-label">日均供水量</div>
+                <div class="metric-value" id="avgDaily">-</div>
+                <div class="metric-unit">立方米/天</div>
+            </div>
+        </div>
+
+        <!-- 图表网格 -->
+        <div class="charts-grid">
+            <!-- 近7天趋势图 -->
+            <div class="chart-card">
+                <div class="chart-title">📊 近7天供水趋势</div>
+                <div id="chart7Days" class="chart-container"></div>
+            </div>
+
+            <!-- 水表占比饼图 -->
+            <div class="chart-card">
+                <div class="chart-title">🥧 各水表供水占比</div>
+                <div id="chartPie" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- 近30天柱状图 -->
+        <div class="chart-card">
+            <div class="chart-title">📊 近30天供水量分析</div>
+            <div id="chart30Days" class="chart-container" style="height: 400px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载时获取数据
+        window.addEventListener('load', loadDashboardData);
+
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/dashboard_data');
+                const result = await response.json();
+
+                if (result.success) {
+                    const data = result.data;
+                    
+                    // 更新关键指标
+                    updateMetrics(data);
+                    
+                    // 绘制图表
+                    draw7DaysChart(data.recent_7_days);
+                    drawPieChart(data.water_meters);
+                    draw30DaysChart(data.recent_30_days);
+                } else {
+                    alert('加载数据失败: ' + result.message);
+                }
+            } catch (error) {
+                alert('加载数据失败: ' + error.message);
+            }
+        }
+
+        function updateMetrics(data) {
+            // 昨日供水量
+            const todayWater = data.today.total_water || 0;
+            document.getElementById('todayWater').textContent = Math.round(todayWater).toLocaleString();
+            
+            const todayDiff = data.today.diff || 0;
+            const changeEl = document.getElementById('todayChange');
+            changeEl.textContent = `环比: ${todayDiff > 0 ? '+' : ''}${Math.round(todayDiff).toLocaleString()}`;
+            changeEl.className = 'metric-change ' + (todayDiff >= 0 ? 'positive' : 'negative');
+            
+            // 环比增长率
+            const growthRate = data.growth_rate || 0;
+            document.getElementById('growthRate').textContent = growthRate.toFixed(2);
+            
+            // 本月累计
+            document.getElementById('monthTotal').textContent = Math.round(data.month_total).toLocaleString();
+            document.getElementById('monthDays').textContent = `已统计 ${data.month_days} 天`;
+            
+            // 日均供水量
+            const avgDaily = data.month_days > 0 ? data.month_total / data.month_days : 0;
+            document.getElementById('avgDaily').textContent = Math.round(avgDaily).toLocaleString();
+        }
+
+        function draw7DaysChart(data) {
+            const chart = echarts.init(document.getElementById('chart7Days'));
+            
+            const dates = data.map(item => item.date.substring(5)); // 只显示月-日
+            const values = data.map(item => Math.round(item.total_water || 0));
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: '{b}<br/>供水量: {c} 立方米'
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: dates,
+                    axisLabel: {
+                        rotate: 45
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '供水量 (m³)',
+                    axisLabel: {
+                        formatter: '{value}'
+                    }
+                },
+                series: [{
+                    name: '供水量',
+                    type: 'line',
+                    data: values,
+                    smooth: true,
+                    lineStyle: {
+                        width: 3,
+                        color: '#667eea'
+                    },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0,
+                            y: 0,
+                            x2: 0,
+                            y2: 1,
+                            colorStops: [{
+                                offset: 0, color: 'rgba(102, 126, 234, 0.5)'
+                            }, {
+                                offset: 1, color: 'rgba(102, 126, 234, 0.1)'
+                            }]
+                        }
+                    },
+                    itemStyle: {
+                        color: '#667eea'
+                    }
+                }]
+            };
+            
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        function drawPieChart(data) {
+            const chart = echarts.init(document.getElementById('chartPie'));
+            
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} 立方米 ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: 10,
+                    top: 'center'
+                },
+                series: [{
+                    name: '供水量',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: false,
+                        position: 'center'
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: 20,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    labelLine: {
+                        show: false
+                    },
+                    data: data
+                }]
+            };
+            
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        function draw30DaysChart(data) {
+            const chart = echarts.init(document.getElementById('chart30Days'));
+            
+            const dates = data.map(item => item.date.substring(5));
+            const values = data.map(item => Math.round(item.total_water || 0));
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    },
+                    formatter: '{b}<br/>供水量: {c} 立方米'
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: dates,
+                    axisLabel: {
+                        rotate: 45,
+                        interval: 2
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '供水量 (m³)'
+                },
+                series: [{
+                    name: '供水量',
+                    type: 'bar',
+                    data: values,
+                    itemStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0,
+                            y: 0,
+                            x2: 0,
+                            y2: 1,
+                            colorStops: [{
+                                offset: 0, color: '#4facfe'
+                            }, {
+                                offset: 1, color: '#00f2fe'
+                            }]
+                        },
+                        borderRadius: [5, 5, 0, 0]
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0,
+                                y: 0,
+                                x2: 0,
+                                y2: 1,
+                                colorStops: [{
+                                    offset: 0, color: '#667eea'
+                                }, {
+                                    offset: 1, color: '#764ba2'
+                                }]
+                            }
+                        }
+                    }
+                }]
+            };
+            
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+    </script>
+</body>
+</html>
+

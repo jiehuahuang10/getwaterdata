@@ -1335,6 +1335,159 @@ def get_excel_data():
             'message': f'读取Excel失败: {str(e)}'
         })
 
+# ==================== 数据分析仪表板 ====================
+
+@app.route('/dashboard')
+def dashboard():
+    """数据分析仪表板主页"""
+    return render_template('dashboard.html')
+
+@app.route('/api/dashboard_data')
+def get_dashboard_data():
+    """获取仪表板数据"""
+    try:
+        excel_path = DATA_SOURCE_PATH
+        
+        if not os.path.exists(excel_path):
+            return jsonify({
+                'success': False,
+                'message': 'Excel文件不存在'
+            })
+        
+        wb = openpyxl.load_workbook(excel_path, data_only=True)
+        ws = wb.active
+        
+        # 获取表头（第4行）
+        headers = [cell.value for cell in ws[4]]
+        
+        # 找到关键列的索引
+        col_indices = {}
+        for idx, header in enumerate(headers, start=1):
+            if header:
+                clean_header = str(header).replace('\n', '').replace('\r', '').strip()
+                if clean_header not in col_indices:
+                    col_indices[clean_header] = idx
+        
+        # 获取所有数据行（从第5行开始）
+        all_data = []
+        for row in ws.iter_rows(min_row=5, values_only=True):
+            if row[0]:  # 确保日期不为空
+                try:
+                    # 转换日期
+                    if isinstance(row[0], datetime):
+                        date_str = row[0].strftime('%Y-%m-%d')
+                    else:
+                        date_str = str(row[0])
+                    
+                    # 提取关键数据
+                    row_data = {
+                        'date': date_str,
+                        'total_water': row[col_indices.get('石滩供水服务部日供水', 2) - 1] if '石滩供水服务部日供水' in col_indices else 0,
+                        'diff': row[col_indices.get('环比差值', 3) - 1] if '环比差值' in col_indices else 0,
+                        'shitan': row[col_indices.get('石滩', 4) - 1] if '石滩' in col_indices else 0,
+                        'sanjiang': row[col_indices.get('三江', 5) - 1] if '三江' in col_indices else 0,
+                        'shazhuang': row[col_indices.get('沙庄', 6) - 1] if '沙庄' in col_indices else 0,
+                        'lixin': row[col_indices.get('荔新大道', 7) - 1] if '荔新大道' in col_indices else 0,
+                        'xincheng': row[col_indices.get('新城大道', 8) - 1] if '新城大道' in col_indices else 0,
+                        'sanjiang_new': row[col_indices.get('三江新总表', 9) - 1] if '三江新总表' in col_indices else 0,
+                    }
+                    
+                    # 过滤掉所有数据都为空或0的行
+                    has_data = any(v for k, v in row_data.items() if k != 'date' and v not in [None, 0, '0', '-', ''])
+                    if has_data:
+                        all_data.append(row_data)
+                except Exception as e:
+                    continue
+        
+        wb.close()
+        
+        # 按日期排序（最新的在前）
+        all_data.sort(key=lambda x: x['date'], reverse=True)
+        
+        # 过滤掉今天及未来的数据
+        today = datetime.now()
+        yesterday = today - timedelta(days=1)
+        yesterday_str = yesterday.strftime('%Y-%m-%d')
+        
+        # 只保留昨天及之前的数据
+        all_data = [item for item in all_data if item['date'] <= yesterday_str]
+        
+        today_data = None
+        yesterday_data = None
+        
+        # 获取昨天的数据
+        for item in all_data:
+            if item['date'] == yesterday_str:
+                today_data = item
+                break
+        
+        # 获取前天的数据（用于计算环比）
+        if today_data:
+            day_before_yesterday = yesterday - timedelta(days=1)
+            day_before_yesterday_str = day_before_yesterday.strftime('%Y-%m-%d')
+            for item in all_data:
+                if item['date'] == day_before_yesterday_str:
+                    yesterday_data = item
+                    break
+        
+        # 计算环比增长率
+        growth_rate = 0
+        if today_data and yesterday_data:
+            today_total = today_data.get('total_water', 0) or 0
+            yesterday_total = yesterday_data.get('total_water', 0) or 0
+            if yesterday_total > 0:
+                growth_rate = ((today_total - yesterday_total) / yesterday_total) * 100
+        
+        # 获取本月数据（只统计到昨天）
+        current_month = today.strftime('%Y-%m')
+        month_data = [item for item in all_data if item['date'].startswith(current_month)]
+        month_total = sum(item.get('total_water', 0) or 0 for item in month_data)
+        
+        # 获取最近7天数据（用于折线图，不包含今天）
+        recent_7_days = all_data[:7] if len(all_data) >= 7 else all_data
+        recent_7_days = list(reversed(recent_7_days))  # 按日期正序排列
+        
+        # 获取最近30天数据（用于柱状图，不包含今天）
+        recent_30_days = all_data[:30] if len(all_data) >= 30 else all_data
+        recent_30_days = list(reversed(recent_30_days))  # 按日期正序排列
+        
+        # 计算各水表占比（使用昨天的数据）
+        water_meters = []
+        if today_data:
+            meters = [
+                {'name': '荔新大道', 'value': today_data.get('lixin', 0) or 0},
+                {'name': '新城大道', 'value': today_data.get('xincheng', 0) or 0},
+                {'name': '三江新总表', 'value': today_data.get('sanjiang_new', 0) or 0},
+                {'name': '石滩', 'value': today_data.get('shitan', 0) or 0},
+                {'name': '三江', 'value': today_data.get('sanjiang', 0) or 0},
+                {'name': '沙庄', 'value': today_data.get('shazhuang', 0) or 0},
+            ]
+            # 过滤掉值为0的水表
+            water_meters = [m for m in meters if m['value'] > 0]
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'today': {
+                    'date': yesterday_str,
+                    'total_water': today_data.get('total_water', 0) if today_data else 0,
+                    'diff': today_data.get('diff', 0) if today_data else 0,
+                },
+                'growth_rate': round(growth_rate, 2),
+                'month_total': round(month_total, 2),
+                'month_days': len(month_data),
+                'recent_7_days': recent_7_days,
+                'recent_30_days': recent_30_days,
+                'water_meters': water_meters,
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'获取数据失败: {str(e)}'
+        })
+
 # ==================== 启动应用 ====================
 
 if __name__ == '__main__':
