@@ -13,11 +13,11 @@ def calculate_water_formulas(excel_path):
     手动计算Excel中的公式列
     
     公式说明：
-    1. 石滩供水服务部日供水 = 荔新大道 + 新城大道 + 三江新总表 + 边界过水 + 边界过水(请11) + 宁西2总表 + 沙庄总表
-    2. 环比差值 = 当前行石滩供水服务部日供水 - 上一行石滩供水服务部日供水
-    3. 石滩 = 荔新大道 - 宁西2总表 + 新城大道 + 边界过水(请11)
-    4. 三江 = 三江新总表
-    5. 沙庄 = 沙庄总表
+    1. 石滩 = 荔新大道 - 宁西2总表 + 新城大道 + 边界过水(请11)
+    2. 三江 = 三江新总表
+    3. 沙庄 = 沙庄总表
+    4. 石滩供水服务部日供水 = 石滩 + 三江 + 沙庄
+    5. 环比差值 = 当前行石滩供水服务部日供水 - 上一行石滩供水服务部日供水
     """
     print(f"[INFO] 开始计算公式: {excel_path}")
     
@@ -113,20 +113,20 @@ def calculate_water_formulas(excel_path):
                 shazhuang = to_float(get_cell_value(row_idx, '沙庄总表'))
                 
                 # 计算公式
-                # 1. 石滩供水服务部日供水
-                total = lixin + xincheng + sanjiang + bianjie1 + bianjie2 + ningxi + shazhuang
-                
-                # 2. 环比差值
-                huanbi = total - prev_total if prev_total is not None else 0
-                
-                # 3. 石滩 = 荔新大道 - 宁西2总表 + 新城大道 + 边界过水(请11)
+                # 1. 石滩 = 荔新大道 - 宁西2总表 + 新城大道 + 边界过水(请11)
                 shitan = lixin - ningxi + xincheng + bianjie2
                 
-                # 4. 三江（直接使用三江新总表）
+                # 2. 三江 = 三江新总表
                 sanjiang_val = sanjiang
                 
-                # 5. 沙庄（直接使用沙庄总表）
+                # 3. 沙庄 = 沙庄总表
                 shazhuang_val = shazhuang
+                
+                # 4. 石滩供水服务部日供水 = 石滩 + 三江 + 沙庄
+                total = shitan + sanjiang_val + shazhuang_val
+                
+                # 5. 环比差值 = 当前行 - 上一行
+                huanbi = total - prev_total if prev_total is not None else 0
                 
                 # 写入计算结果
                 if '石滩供水服务部日供水' in col_indices:
