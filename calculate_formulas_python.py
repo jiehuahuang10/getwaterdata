@@ -15,7 +15,7 @@ def calculate_water_formulas(excel_path):
     公式说明：
     1. 石滩供水服务部日供水 = 荔新大道 + 新城大道 + 三江新总表 + 边界过水 + 边界过水(请11) + 宁西2总表 + 沙庄总表
     2. 环比差值 = 当前行石滩供水服务部日供水 - 上一行石滩供水服务部日供水
-    3. 石滩 = 荔新大道 + 新城大道
+    3. 石滩 = 荔新大道 - 宁西2总表 + 新城大道 + 边界过水(请11)
     4. 三江 = 三江新总表
     5. 沙庄 = 沙庄总表
     """
@@ -119,8 +119,8 @@ def calculate_water_formulas(excel_path):
                 # 2. 环比差值
                 huanbi = total - prev_total if prev_total is not None else 0
                 
-                # 3. 石滩
-                shitan = lixin + xincheng
+                # 3. 石滩 = 荔新大道 - 宁西2总表 + 新城大道 + 边界过水(请11)
+                shitan = lixin - ningxi + xincheng + bianjie2
                 
                 # 4. 三江（直接使用三江新总表）
                 sanjiang_val = sanjiang

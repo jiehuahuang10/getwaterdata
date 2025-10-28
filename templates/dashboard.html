@@ -271,7 +271,7 @@
         <div class="metrics-grid">
             <div class="metric-card">
                 <div class="metric-icon">💧</div>
-                <div class="metric-label">昨日供水量</div>
+                <div class="metric-label" id="todayLabel">昨日供水量</div>
                 <div class="metric-value" id="todayWater">-</div>
                 <div class="metric-unit">立方米</div>
                 <div class="metric-change" id="todayChange">-</div>
@@ -350,6 +350,23 @@
         }
 
         function updateMetrics(data) {
+            // 更新日期标签
+            const dataDate = data.today.date;
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            let dateLabel = '昨日供水量';
+            if (dataDate !== yesterdayStr) {
+                // 如果不是昨日数据，显示具体日期
+                const dateObj = new Date(dataDate);
+                const month = dateObj.getMonth() + 1;
+                const day = dateObj.getDate();
+                dateLabel = `${month}月${day}日供水量`;
+            }
+            document.getElementById('todayLabel').textContent = dateLabel;
+            
             // 昨日供水量
             const todayWater = data.today.total_water || 0;
             document.getElementById('todayWater').textContent = Math.round(todayWater).toLocaleString();

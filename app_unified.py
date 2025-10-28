@@ -1421,14 +1421,17 @@ def get_dashboard_data():
                 today_data = item
                 break
         
-        # 获取前天的数据（用于计算环比）
-        if today_data:
-            day_before_yesterday = yesterday - timedelta(days=1)
-            day_before_yesterday_str = day_before_yesterday.strftime('%Y-%m-%d')
-            for item in all_data:
-                if item['date'] == day_before_yesterday_str:
-                    yesterday_data = item
-                    break
+        # 如果昨天没有数据，使用前天的数据
+        if not today_data and len(all_data) > 0:
+            today_data = all_data[0]  # 使用最新的一条数据
+            print(f"[INFO] 昨日数据不存在，使用最新数据: {today_data['date']}")
+        
+        # 获取前一天的数据（用于计算环比）
+        if today_data and len(all_data) > 0:
+            # 找到today_data的索引
+            current_index = next((i for i, item in enumerate(all_data) if item['date'] == today_data['date']), None)
+            if current_index is not None and current_index + 1 < len(all_data):
+                yesterday_data = all_data[current_index + 1]
         
         # 计算环比增长率
         growth_rate = 0
@@ -1469,7 +1472,7 @@ def get_dashboard_data():
             'success': True,
             'data': {
                 'today': {
-                    'date': yesterday_str,
+                    'date': today_data.get('date', yesterday_str) if today_data else yesterday_str,
                     'total_water': today_data.get('total_water', 0) if today_data else 0,
                     'diff': today_data.get('diff', 0) if today_data else 0,
                 },
