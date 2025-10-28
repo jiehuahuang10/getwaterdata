@@ -13,8 +13,8 @@ def calculate_water_formulas(excel_path):
     手动计算Excel中的公式列
     
     公式说明：
-    1. 石滩 = 荔新大道 - 宁西2总表 + 新城大道 + 边界过水(请11)
-    2. 三江 = 三江新总表
+    1. 石滩 = 荔新大道 - 宁西2总表 + 新城大道 + 边界过表用户（荔湖）
+    2. 三江 = 三江新总表 - 沙庄总表 - 边界过表用户（增江）
     3. 沙庄 = 沙庄总表
     4. 石滩供水服务部日供水 = 石滩 + 三江 + 沙庄
     5. 环比差值 = 当前行石滩供水服务部日供水 - 上一行石滩供水服务部日供水
@@ -49,7 +49,7 @@ def calculate_water_formulas(excel_path):
         # 关键列
         key_columns = [
             '荔新大道', '新城大道', '三江新总表', '边界过水', 
-            '边界过水(请11)', '宁西2总表', '沙庄总表',
+            '边界过表用户（荔湖）', '边界过表用户（增江）', '宁西2总表', '沙庄总表',
             '石滩供水服务部日供水', '环比差值', '石滩', '三江', '沙庄'
         ]
         
@@ -106,21 +106,22 @@ def calculate_water_formulas(excel_path):
                 # 使用安全方法获取所有列的值并转换为数值
                 lixin = to_float(get_cell_value(row_idx, '荔新大道'))
                 xincheng = to_float(get_cell_value(row_idx, '新城大道'))
-                sanjiang = to_float(get_cell_value(row_idx, '三江新总表'))
+                sanjiang_table = to_float(get_cell_value(row_idx, '三江新总表'))
                 bianjie1 = to_float(get_cell_value(row_idx, '边界过水'))
-                bianjie2 = to_float(get_cell_value(row_idx, '边界过水(请11)'))
+                bianjie_lihu = to_float(get_cell_value(row_idx, '边界过表用户（荔湖）'))
+                bianjie_zengjiang = to_float(get_cell_value(row_idx, '边界过表用户（增江）'))
                 ningxi = to_float(get_cell_value(row_idx, '宁西2总表'))
-                shazhuang = to_float(get_cell_value(row_idx, '沙庄总表'))
+                shazhuang_table = to_float(get_cell_value(row_idx, '沙庄总表'))
                 
                 # 计算公式
-                # 1. 石滩 = 荔新大道 - 宁西2总表 + 新城大道 + 边界过水(请11)
-                shitan = lixin - ningxi + xincheng + bianjie2
+                # 1. 石滩 = 荔新大道 - 宁西2总表 + 新城大道 + 边界过表用户（荔湖）
+                shitan = lixin - ningxi + xincheng + bianjie_lihu
                 
-                # 2. 三江 = 三江新总表
-                sanjiang_val = sanjiang
+                # 2. 三江 = 三江新总表 - 沙庄总表 - 边界过表用户（增江）
+                sanjiang_val = sanjiang_table - shazhuang_table - bianjie_zengjiang
                 
                 # 3. 沙庄 = 沙庄总表
-                shazhuang_val = shazhuang
+                shazhuang_val = shazhuang_table
                 
                 # 4. 石滩供水服务部日供水 = 石滩 + 三江 + 沙庄
                 total = shitan + sanjiang_val + shazhuang_val
