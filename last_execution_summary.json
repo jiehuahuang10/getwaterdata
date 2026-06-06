@@ -1,11 +1,11 @@
 {
-  "execution_time": "2026-06-05 21:29:52",
-  "target_date": "2026-06-04",
+  "execution_time": "2026-06-06 19:37:55",
+  "target_date": "2026-06-05",
   "success": true,
   "result": {
     "success": true,
     "message": "成功更新 8 个水表的数据到Excel文件",
     "updated_meters": 8,
-    "target_date": "2026-06-04"
+    "target_date": "2026-06-05"
   }
 }
